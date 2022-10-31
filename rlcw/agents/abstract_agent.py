@@ -13,7 +13,7 @@ class AbstractAgent:
         self.timesteps = timesteps
         self.env = _make_env()
 
-    def get_action(self):
+    def get_action(self, observation):
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
     def train(self) -> NoReturn:
