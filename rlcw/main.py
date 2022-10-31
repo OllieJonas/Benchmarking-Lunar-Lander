@@ -2,7 +2,7 @@ import logging
 
 from argparse import ArgumentParser, Namespace
 
-from rlcw.abstract_agent import AbstractAgent
+from rlcw.agents.abstract_agent import AbstractAgent
 from rlcw.util import init_logger
 
 LOGGER = init_logger(suffix="Main")
