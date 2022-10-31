@@ -1,14 +1,26 @@
 import logging
 
+from argparse import ArgumentParser, Namespace
+
 from rlcw.abstract_agent import AbstractAgent
 from rlcw.util import init_logger
 
-LOGGER = init_logger(suffix="Main", level=logging.DEBUG)
+LOGGER = init_logger(suffix="Main")
 
 
 def main():
+    args = parse_cmd_line_args()
+
+    LOGGER.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+
     LOGGER.info("Hello world!")
-    pass
+
+
+def parse_cmd_line_args() -> Namespace:
+    arg_parser = ArgumentParser()
+
+    arg_parser.add_argument("--verbose", action="store_true", help="Toggles debug printing", default=False)
+    arg_parser.add_argument("--timesteps", type=int, help="Number of timesteps to use", default=1_000)
 
 
 def get_agent(name: str) -> AbstractAgent:
