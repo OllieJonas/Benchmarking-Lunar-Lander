@@ -26,7 +26,8 @@ def parse_cmd_line_args() -> Namespace:
 
 
 def get_agent(name: str) -> AbstractAgent:
-    pass
+    if name.lower() == "random":
+        return RandomAgent()
 
 
 if __name__ == "__main__":

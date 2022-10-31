@@ -18,3 +18,6 @@ class AbstractAgent:
 
     def train(self) -> NoReturn:
         raise NotImplementedError("This hasn't been implemented yet! :(")
+
+    def close(self):
+        self.env.close()
