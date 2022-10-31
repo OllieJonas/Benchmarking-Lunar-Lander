@@ -22,6 +22,8 @@ def parse_cmd_line_args() -> Namespace:
     arg_parser.add_argument("--verbose", action="store_true", help="Toggles debug printing", default=False)
     arg_parser.add_argument("--timesteps", type=int, help="Number of timesteps to use", default=1_000)
 
+    return arg_parser.parse_args()
+
 
 def get_agent(name: str) -> AbstractAgent:
     pass
