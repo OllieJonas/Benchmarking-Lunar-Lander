@@ -12,5 +12,5 @@ class AbstractAlgorithm:
     def __init__(self):
         env = _make_env()
 
-    def run(self) -> NoReturn:
+    def train(self) -> NoReturn:
         raise NotImplementedError("This hasn't been implemented yet! :(")

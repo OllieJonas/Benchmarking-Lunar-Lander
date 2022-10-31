@@ -5,7 +5,7 @@ from rlcw.abstract_algorithm import AbstractAlgorithm
 
 LOGGER = init_logger("TD3 (Exemplar)")
 
-class TD3(AbstractAlgorithm):
-    def run(self):
-        LOGGER.info("Hello, world!")
 
+class TD3(AbstractAlgorithm):
+    def train(self):
+        LOGGER.info("Hello, world!")
