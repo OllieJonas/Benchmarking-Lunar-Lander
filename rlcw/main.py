@@ -5,9 +5,8 @@ def main():
     pass
 
 
-def get_exemplar_agent(name: str) -> AbstractAlgorithm:
-    if name == "TD3":
-        return
+def get_algorithm_impl(name: str) -> AbstractAlgorithm:
+    pass
 
 
 if __name__ == "__main__":
