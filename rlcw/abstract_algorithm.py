@@ -1,9 +1,16 @@
 import gym
 
+from typing import NoReturn
+
+
+def _make_env():
+    return gym.make("LunarLander-v2", render_mode="human")
+
+
 class AbstractAlgorithm:
 
-    def get_env(self):
-        pass
+    def __init__(self):
+        env = _make_env()
 
-    def run(self):
+    def run(self) -> NoReturn:
         raise NotImplementedError("This hasn't been implemented yet! :(")
