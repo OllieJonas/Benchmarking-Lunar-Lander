@@ -5,8 +5,8 @@ from rlcw.agents.abstract_agent import AbstractAgent
 
 class RandomAgent(AbstractAgent):
 
-    def __init__(self, timesteps):
-        super().__init__(timesteps)
+    def __init__(self):
+        super().__init__()
 
     def get_action(self):
         pass

@@ -9,8 +9,7 @@ def _make_env():
 
 class AbstractAgent:
 
-    def __init__(self, timesteps: int):
-        self.timesteps = timesteps
+    def __init__(self):
         self.env = _make_env()
 
     def get_action(self, observation):
