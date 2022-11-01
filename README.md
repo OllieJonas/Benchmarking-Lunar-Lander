@@ -23,11 +23,7 @@ For Windows, I've come up with a MASSIVE workaround for this, which is to use so
 #### Installation Guide (Windows)
   
   1. Install Docker. You can find the link for this here: [Install Docker](https://docs.docker.com/get-docker/ "Docker")
-  2. For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows), and install the Ubuntu distro for WSL. For me personally, I had to do the following:
-      1. Open a Terminal as Admin
-      2. Run wsl --set-default-version 2
-      3. Run wsl --install -d Ubuntu
-      4. Restart PC
+  2. For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows), and install the Ubuntu distro for WSL. For me personally, I had to follow this guide to install it: [Install WS2](https://learn.microsoft.com/en-us/windows/wsl/install-manual)
   3. Navigate to project directory
   4. Run docker build
   
