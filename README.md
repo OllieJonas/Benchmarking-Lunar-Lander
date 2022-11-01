@@ -12,9 +12,9 @@ To download this repository (all OS):
 For Linux / Mac, it looks like its quite easy to do. I need to check this by installing it on my laptop (it runs Linux, I'll update this space as I do it), you just need to do the following:
 
 ### Console (Mac / Linux)
-1) Navigate to the root directory for this project.
-2) Run pip3 install -r requirements.txt
-3) Run pip3 install gym[All] or pip3 install gym[Box2D]
+1. Navigate to the root directory for this project.
+2. Run pip3 install -r requirements.txt
+3. Run pip3 install gym[All] or pip3 install gym[Box2D]
 
 ### Windows (or All if this doesn't work)
 
@@ -27,4 +27,7 @@ For Windows, I've come up with a MASSIVE workaround for this, which is to use so
     1. Open a Terminal as Admin
     2. Run wsl --set-default-version 2
     3. Run wsl --install -d Ubuntu
+    4. Restart PC
+  3. Navigate to project directory
+  4. Run docker build
   
