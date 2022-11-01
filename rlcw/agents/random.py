@@ -1,3 +1,5 @@
+import random
+
 from typing import NoReturn
 
 from rlcw.agents.abstract_agent import AbstractAgent
@@ -5,11 +7,11 @@ from rlcw.agents.abstract_agent import AbstractAgent
 
 class RandomAgent(AbstractAgent):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, action_space):
+        super().__init__(action_space)
 
-    def get_action(self):
-        pass
+    def get_action(self, observation):
+        return random.choice(self.action_space.n)
 
     def train(self) -> NoReturn:
         pass
