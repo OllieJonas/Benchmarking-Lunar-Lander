@@ -23,7 +23,10 @@ For Windows, I've come up with a MASSIVE workaround for this, which is to use so
 #### Installation Guide (Windows)
   
   1. Install Docker. You can find the link for this here: [Install Docker](https://docs.docker.com/get-docker/ "Docker")
-  2. For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows), and install the Ubuntu distro for WSL. For me personally, I had to follow this guide to install it: [Install WS2](https://learn.microsoft.com/en-us/windows/wsl/install-manual)
+  2. For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows), and install the Ubuntu distro for WSL. For me personally, I had to follow this guide to install it: [Install WS2](https://learn.microsoft.com/en-us/windows/wsl/install-manual). Also note that Docker Desktop _will automatically start when you start your PC._ To disable this, do the following:
+      1. Open Task Manager
+      2. Go to the Startup Tab
+      3. Find Docker Desktop, right click and click Disable.
   3. Navigate to project directory
   4. Run docker build
   
