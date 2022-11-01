@@ -19,3 +19,9 @@ For Linux / Mac, it looks like its quite easy to do. I need to check this by ins
 ### Windows (or All if this doesn't work)
 
 For Windows, I've come up with a MASSIVE workaround for this, which is to use something called Docker.
+  
+#### Installation Guide (Windows)
+  
+  1) Install Docker. You can find the link for this here: [Install Docker](https://docs.docker.com/get-docker/ "Docker")
+  2) For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows). For me personally, I had to do the following:
+  
