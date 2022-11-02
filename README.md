@@ -16,7 +16,7 @@ For Linux / Mac, it looks like its quite easy to do. I need to check this by ins
 2. Run pip3 install -r requirements.txt
 3. Run pip3 install gym[All] or pip3 install gym[Box2D]
 
-### Windows (or All if this doesn't work)
+### Windows (or All if Mac / Linux doesn't work)
 
 For Windows, I've come up with a MASSIVE workaround for this, which is to use something called Docker.
   
@@ -27,6 +27,6 @@ For Windows, I've come up with a MASSIVE workaround for this, which is to use so
       1. Open Task Manager
       2. Go to the Startup Tab
       3. Find Docker Desktop, right click and click Disable.
-  3. Navigate to project directory
-  4. Run docker build
+
+Once this is all done, you just need to run either the run.batch or run.sh scripts in the root directory.
   
