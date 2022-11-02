@@ -1,6 +1,6 @@
 import gym
 
-from typing import NoReturn
+from typing import NoReturn, List
 
 
 class AbstractAgent:
@@ -11,5 +11,5 @@ class AbstractAgent:
     def get_action(self, observation):
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
-    def train(self) -> NoReturn:
+    def train(self, training_context: List) -> NoReturn:
         raise NotImplementedError("This hasn't been implemented yet! :(")

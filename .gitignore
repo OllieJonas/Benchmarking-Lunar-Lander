@@ -1,6 +1,12 @@
 # PyCharm stuff
 ./idea
 
+# Our stuff
+recordings
+logs
+results
+policies
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

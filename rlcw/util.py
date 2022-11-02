@@ -1,5 +1,8 @@
 import logging
 import sys
+from datetime import datetime
+
+STANDARD_FILE_NAME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
 
 
 def init_logger(suffix: str = "", level=logging.INFO) -> logging.Logger:
@@ -11,6 +14,8 @@ def init_logger(suffix: str = "", level=logging.INFO) -> logging.Logger:
     """
     NAME = "RL-CW"
 
+    logging.basicConfig(filename=f'../logs/{STANDARD_FILE_NAME}.log', level=level)
+
     logger = logging.getLogger(f'{NAME} {suffix}')
 
     handler = logging.StreamHandler(stream=sys.stdout)
@@ -18,7 +23,6 @@ def init_logger(suffix: str = "", level=logging.INFO) -> logging.Logger:
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
-    logger.setLevel(level)
     logger.addHandler(handler)
 
     return logger
