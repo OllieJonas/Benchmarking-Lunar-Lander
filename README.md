@@ -9,9 +9,10 @@ To download this repository (all OS):
 
 1) Run git clone https://github.com/OllieJonas/ReinforcementLearningCW <your directory>
 
+### Console (Mac / Linux)
+  
 For Linux / Mac, it's very easy to do:
 
-### Console (Mac / Linux)
 1. Navigate to the root directory for this project.
 2. Run pip3 install -r requirements.txt
 3. Run pip3 install swig
