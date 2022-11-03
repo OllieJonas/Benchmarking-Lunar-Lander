@@ -9,18 +9,39 @@ To download this repository (all OS):
 
 1) Run git clone https://github.com/OllieJonas/ReinforcementLearningCW <your directory>
 
-For Linux / Mac, it looks like its quite easy to do. I need to check this by installing it on my laptop (it runs Linux, I'll update this space as I do it), you just need to do the following:
+For Linux / Mac, it's very easy to do:
 
 ### Console (Mac / Linux)
 1. Navigate to the root directory for this project.
 2. Run pip3 install -r requirements.txt
-3. Run pip3 install gym[All] or pip3 install gym[Box2D]
+3. Run pip3 install swig
+4. Run pip3 install gym[All] or pip3 install gym[Box2D]
+5. Don't forget to set your PYTHONPATH env var to rlcw
 
 ### Windows (or All if Mac / Linux doesn't work)
 
 For Windows, I've come up with a MASSIVE workaround for this, which is to use something called Docker.
+
+#### What is Docker?
+
+So Docker is a containerization application - ie. it allows you to build, run and manage containers.
+
+Well, you may be asking what are containers now - seems pretty obvious. They're basically your program and its dependencies packaged together into one easily deployable bundle.
+
+
+So the idea of Docker is to install the program and its dependencies onto an "image", which can then be deployed as many times as you like as a "container".
+
+It's mainly used in the context of large-scale application deployment, where you're unsure of what the machine you're installing your software will be running. The idea is, as long as each machine is running Docker, it means you don't need to care about having a specific version of a library, or having the correct environment variables on there, stuff like that.
+
+The details of this are specified in a Dockerfile, which tells you what to include, what to install and how to enter the application.
+
+#### So why the hell are we using it then?
+
+Well, although this is VERY wrong in terms of how Docker actually works or what it does, from our usage, we're essentially using it as a virtual machine with absolutely minimal installed (except for what we specify) that's only able to run a single thing (ie. our program). This means that when you run the program through Docker, you will essentially be running it on Linux with only the bare bones essentials for our project to work.
   
 #### Installation Guide (Windows)
+
+Now, unfortunately, Docker can be very confusing to install.
   
   1. Install Docker. You can find the link for this here: [Install Docker](https://docs.docker.com/get-docker/ "Docker")
   2. For Windows, you're going to need to use WSL 2 Linux Kernel (A Linux Kernel for Windows), and install the Ubuntu distro for WSL. For me personally, I had to follow this guide to install it: [Install WS2](https://learn.microsoft.com/en-us/windows/wsl/install-manual). Also note that Docker Desktop _will automatically start when you start your PC._ To disable this, do the following:
@@ -28,5 +49,11 @@ For Windows, I've come up with a MASSIVE workaround for this, which is to use so
       2. Go to the Startup Tab
       3. Find Docker Desktop, right click and click Disable.
 
-Once this is all done, you just need to run either the run.batch or run.sh scripts in the root directory.
+#### Running the Program
+
+Once this is all done, you just need to run either the run.batch (for Windows) or run.sh (for UNIX) scripts in the root directory.
+
+I've tried my best to set this project up such that we don't ever need to worry about the Docker part of it. Hopefully, once its installed, we won't need to worry about it ! :)
+
+If you ever need to add a dependency to the project, just add it to the requirements.txt - Docker will automatically sort it out for you.
   
