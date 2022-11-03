@@ -1,0 +1,6 @@
+agent: "random"
+verbose: true
+render: true
+timesteps:
+  total: 200
+  start_training: 50
