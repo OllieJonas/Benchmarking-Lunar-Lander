@@ -1,5 +1,42 @@
 # Creating an Agent
 
+## How
+
+Creating an agent that's recognised by the program is very easy...
+
+1) Create a new .py file under the agents package. Call it whatever you like.
+2) Have it implement the AbstractAgent class in abstract_agent.
+3) Inherit the methods contained, and call the super constructor, passing action_space into your agent _(kinda messy, maybe should try to change that idk lmao)_
+
+So far, it should look like this:
+
+```
+from rlcw.agents.abstract_agent import AbstractAgent
+
+class YourAgent(AbstractAgent):
+
+    def __init__(self, action_space):
+        super.__init__(action_space)
+        
+    def get_action(self, observation):
+        pass
+        
+    def train(self, training_context):
+        pass
+```
+
+Here, you can implement those get_action and train methods, based on the information said later on.
+
+4) Go to main.py
+5) Import your agent
+6) Find the method called `get_agent(name, action_space)`
+7) Add the following to it:
+
+    `elif name.lower() == "<your_agent>": return YourAgent(action_space)`
+
+Bingo bango bongo we're done! The get_agent name uses the name found in config.yml, so if you want to run your new 
+agent, change the name to whatever you put in (7) to it. 
+
 ## Abstract Agent
 
 Abstract Agent is an abstract class to give a template for each new agent that we create - so that our Runner can 
