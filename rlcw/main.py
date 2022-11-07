@@ -5,7 +5,7 @@ import yaml
 
 from rlcw.agents.abstract_agent import AbstractAgent
 from rlcw.agents.random import RandomAgent
-from rlcw.util import init_logger
+from util import init_logger, make_dir
 
 LOGGER = init_logger(suffix="Main")
 
@@ -17,14 +17,16 @@ def _make_env():
 def main():
     # arg stuff
     config = _parse_config()
+    _make_dirs()
+
     LOGGER.setLevel(logging.DEBUG if config["verbose"] else logging.INFO)
     LOGGER.debug(f'Config: {config}')
     LOGGER.info("Hello, world!")
 
-    # # create env
-    # env = _make_env()
-    #
-    # agent = get_agent(config["agent"], env.action_space)
+    env = _make_env()
+    agent = get_agent(config["agent"], env.action_space)
+    runner = Runner(env=env, agent=agent, config=config)
+    runner.run()
 
 
 def get_agent(name: str, action_space) -> AbstractAgent:
@@ -99,6 +101,18 @@ class Results:
 
     def add(self, result: ResultObj):
         self._results.append(result)
+
+    def save(self, file_name):
+        pass
+
+
+def _make_dirs():
+    root_path = "../"
+    results_path = f'{root_path}results'
+    policies_path = f'{root_path}policies'
+
+    make_dir(results_path, logger=LOGGER)
+    make_dir(policies_path, logger=LOGGER)
 
 
 def _parse_config():
