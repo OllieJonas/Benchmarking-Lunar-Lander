@@ -4,10 +4,9 @@ FROM python:3.9
 WORKDIR /app
 
 # basic installs
-RUN apt-get update
-RUN apt-get install -y swig
-RUN apt-get install -y cmake
-RUN apt-get install -y xvfb
+RUN apt-get update \
+&& apt-get install -y swig \
+&& apt-get install -y cmake
 
 # copy essential stuff to image
 COPY requirements.txt /app
@@ -25,5 +24,4 @@ COPY config.yml /app/config.yml
 RUN chmod 777 /app/scripts/startup_script.sh
 
 ENV PYTHONPATH=/app
-
 ENTRYPOINT ["/app/scripts/startup_script.sh"]

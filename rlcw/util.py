@@ -10,7 +10,7 @@ STANDARD_FILE_NAME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
 def make_dir(name: str, logger: logging.Logger = None):
     if not os.path.exists(name):
         if logger is not None:
-            logger.log(f'Directory {name} doesn\'t exist! Creating it now...')
+            logger.info(f'Directory {name} doesn\'t exist! Creating it now...')
         os.mkdir(name)
 
 
