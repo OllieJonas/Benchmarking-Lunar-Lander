@@ -15,6 +15,7 @@ COPY requirements.txt /app
 RUN pip3 install --upgrade pip
 RUN pip3 install -r /app/requirements.txt
 RUN pip3 install gym[Box2D]
+RUN pip3 install jupyter
 
 COPY scripts/startup_script.sh /app/scripts/startup_script.sh
 COPY rlcw /app/rlcw
