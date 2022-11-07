@@ -4,9 +4,9 @@ FROM python:3.9
 WORKDIR /app
 
 # basic installs
-RUN apt-get update \
-&& apt-get install -y swig \
-&& apt-get install -y cmake
+RUN apt-get update -y \
+  && apt-get install -y swig \
+  && apt-get install -y cmake
 
 # copy essential stuff to image
 COPY requirements.txt /app

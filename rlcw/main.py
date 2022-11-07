@@ -2,6 +2,10 @@ import logging
 
 import gym
 import yaml
+import matplotlib as plt
+
+from IPython import display
+
 
 from rlcw.agents.abstract_agent import AbstractAgent
 from rlcw.agents.random import RandomAgent
