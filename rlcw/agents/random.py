@@ -11,7 +11,7 @@ class RandomAgent(AbstractAgent):
         super().__init__(action_space)
 
     def get_action(self, observation):
-        return random.choice(self.action_space.n)
+        return random.choice(range(self.action_space.n))
 
     def train(self, training_context: List) -> NoReturn:
         pass
