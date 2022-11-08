@@ -6,7 +6,7 @@ set CONTAINER_BASE_PATH=""
 
 :: actually run the program
 docker build --tag=%IMAGE_NAME% .
-docker run --publish 5800:5800 --name=%CONTAINER_NAME% %IMAGE_NAME%
+docker run --publish 8888:8888 --name=%CONTAINER_NAME% %IMAGE_NAME%
 
 :: copy any files back over it
 

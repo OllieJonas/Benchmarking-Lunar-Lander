@@ -25,4 +25,6 @@ COPY config.yml /app/config.yml
 RUN chmod 777 /app/scripts/startup_script.sh
 
 ENV PYTHONPATH=/app
+EXPOSE 8888
+
 ENTRYPOINT ["/app/scripts/startup_script.sh"]
