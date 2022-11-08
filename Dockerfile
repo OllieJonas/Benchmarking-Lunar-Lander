@@ -5,8 +5,7 @@ WORKDIR /app
 
 # basic installs
 RUN apt-get update -y \
-  && apt-get install -y swig \
-  && apt-get install -y cmake
+  && apt-get install -y swig
 
 # copy essential stuff to image
 COPY requirements.txt /app
