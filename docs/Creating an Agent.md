@@ -18,6 +18,9 @@ class YourAgent(AbstractAgent):
     def __init__(self, action_space):
         super.__init__(action_space)
         
+    def name():
+        return "YourAgent"
+        
     def get_action(self, observation):
         pass
         
