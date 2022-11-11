@@ -122,8 +122,8 @@ class Results:
         self._results = []
 
     def add(self, episode: int, result: ResultObj):
-        if not self._results[episode]:
-            self._results[episode] = []
+        if len(self._results) != episode + 1:
+            self._results.append([])
 
         self._results[episode].append(result)
 
