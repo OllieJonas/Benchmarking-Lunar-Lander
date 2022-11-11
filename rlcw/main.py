@@ -9,11 +9,17 @@ from rlcw.orchestrator import Orchestrator
 from rlcw.util import init_logger, make_dir, set_logger_level
 
 LOGGER = init_logger(suffix="Main")
+USING_JUPYTER = False
 
 
-def _make_env(from_jupyter=False):
-    return gym.make("LunarLander-v2", render_mode="rgb_array") if from_jupyter \
+def _make_env():
+    return gym.make("LunarLander-v2", render_mode="rgb_array") if USING_JUPYTER \
         else gym.make("LunarLander-v2", render_mode="human")
+
+
+def enable_jupyter(value: bool = True):
+    global USING_JUPYTER
+    USING_JUPYTER = value
 
 
 def main():
@@ -30,8 +36,8 @@ def get_agent(name: str, action_space) -> AbstractAgent:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
 
-def setup(from_jupyter: bool = False):
-    config = _parse_config("../../config.yml" if from_jupyter else "../config.yml")
+def setup():
+    config = _parse_config("../../config.yml" if USING_JUPYTER else "../config.yml")
     _make_dirs()
 
     logger_level = logging.DEBUG if config["verbose"] else logging.INFO
@@ -41,7 +47,7 @@ def setup(from_jupyter: bool = False):
 
     LOGGER.debug(f'Config: {config}')
 
-    env = _make_env(from_jupyter=from_jupyter)
+    env = _make_env()
     agent = get_agent(config["agent"], env.action_space)
 
     return env, agent, config

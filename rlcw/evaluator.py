@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Eval:
+class Evaluator:
 
     def __init__(self, results):
         self.results = results

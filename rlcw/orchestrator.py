@@ -4,31 +4,32 @@ import torch
 
 from IPython import display
 
+from rlcw.main import USING_JUPYTER
+from rlcw.evaluator import Evaluator
 from rlcw.agents.abstract_agent import AbstractAgent
 from rlcw.util import init_logger
 
 
 class Orchestrator:
 
-    def __init__(self, env, agent: AbstractAgent, config, from_jupyter: bool = False, seed: int = 42):
+    def __init__(self, env, agent: AbstractAgent, config, seed: int = 42):
         self.env = env
         self.agent = agent
         self.config = config
-        self.from_jupyter = from_jupyter
         self.seed = seed
 
         self.runner = None
-        self.eval = None
+        self.evaluator = None
 
         self._sync_seeds()
 
     def run(self):
         self.runner = Runner(self.env, self.agent, self.config, seed=self.seed)
-        self.runner.run(from_jupyter=self.from_jupyter)
+        self.runner.run()
         self.env.close()
 
     def eval(self):
-        pass
+        self.evaluator = Evaluator()
 
     def _sync_seeds(self):
         np.random.seed(self.seed)
@@ -45,18 +46,18 @@ class Runner:
         self.seed = seed
         self.results = Results()
 
-    def run(self, from_jupyter: bool = False):
+    def run(self):
         state, info = self.env.reset()
         training_context = []
 
         max_episodes = self.config["episodes"]["max"]
-        episode_count = 1
+        curr_episode = 0
 
         # display
-        image = plt.imshow(self.env.render()) if from_jupyter else None
+        image = plt.imshow(self.env.render()) if USING_JUPYTER else None
 
         for t in range(self.config["timesteps"]["total"]):
-            if episode_count > max_episodes:
+            if curr_episode > max_episodes:
                 break
 
             action = self.agent.get_action(state)
@@ -64,7 +65,7 @@ class Runner:
 
             # render
             if self.config["render"]:
-                if from_jupyter:
+                if USING_JUPYTER:
                     image.set_data(self.env.render())
                     display.display(plt.gcf())
                     display.clear_output(wait=True)
@@ -84,11 +85,11 @@ class Runner:
             next_state = state
             result_obj = Results.ResultObj(timestep=t, state=state, reward=reward)
 
-            self.results.add(result_obj)
+            self.results.add(curr_episode, result_obj)
             self.LOGGER.debug(result_obj)
 
             if terminated:
-                episode_count += 1
+                curr_episode += 1
                 state, info = self.env.reset()
 
             if truncated:

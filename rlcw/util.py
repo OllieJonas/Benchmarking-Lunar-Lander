@@ -19,6 +19,9 @@ def set_logger_level(level):
     global logger_level
     logger_level = level
 
+def save_file(path, from_jupyter: bool = False):
+    pass
+
 
 def init_logger(suffix: str = "") -> logging.Logger:
     """
