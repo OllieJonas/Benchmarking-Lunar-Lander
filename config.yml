@@ -11,5 +11,4 @@ overall:
     start_training: 50
 agents:
   random:
-  random2:
 

@@ -22,7 +22,7 @@ class Orchestrator:
         self.should_render = config["overall"]["output"]["render"]
         self.should_save_timesteps = config["overall"]["output"]["save_timesteps"]
 
-        self.max_episodes = config["overall"]["max"]
+        self.max_episodes = config["overall"]["episodes"]["max"]
 
         self.max_timesteps = config["overall"]["timesteps"]["max"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]

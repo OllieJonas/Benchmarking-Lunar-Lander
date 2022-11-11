@@ -29,9 +29,10 @@ def main():
 
 def get_agent(name: str, action_space, config) -> AbstractAgent:
     name = name.lower()
+    cfg = config[name] if name in config else None
 
     if name == "random":
-        return RandomAgent(action_space, config[name])
+        return RandomAgent(action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -56,7 +57,7 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     env = _make_env()
-    agent = get_agent(config["overall"]["agent"], env.action_space, config["agents"])
+    agent = get_agent(config["overall"]["agent_name"], env.action_space, config["agents"])
 
     return env, agent, config
 
