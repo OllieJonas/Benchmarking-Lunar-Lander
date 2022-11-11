@@ -1,9 +1,9 @@
 overall:
   agent_name: "random"
   output:
+    verbose: false
     render: true
     save_timesteps: true
-    verbose: false
   episodes:
     max: 600
   timesteps:
