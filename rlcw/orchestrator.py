@@ -79,12 +79,6 @@ class Runner:
         self.env.close()
 
 
-class Eval:
-
-    def __init__(self, results):
-        self.results = results
-
-
 class Results:
     class ResultObj:
         def __init__(self, timestamp, observation, reward):
