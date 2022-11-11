@@ -112,7 +112,7 @@ class Results:
             self.state = state
             self.reward = reward
 
-        def __str__(self):
+        def __repr__(self):
             return f'Timestep {self.timestep}: State: {self.state}, Reward: {self.reward}'
 
     def __init__(self, agent_name, date_time):
@@ -129,4 +129,4 @@ class Results:
 
     def save_to_disk(self):
         file_name = f'{self.agent_name} - {self.date_time}'
-        util.save_file("results", file_name, self._results.__str__)
+        util.save_file("results", file_name, self._results.__str__())

@@ -36,7 +36,7 @@ def get_root_output_path():
 
 
 def save_file(directory, file_name, contents):
-    with open(f'{directory}/{file_name}', 'w') as f:
+    with open(f'{get_root_output_path()}/{directory}/{file_name}', 'w') as f:
         f.write(contents)
 
 
