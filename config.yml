@@ -4,5 +4,5 @@ render: true
 episodes:
   max: 600
 timesteps:
-  total: 20
+  total: 200
   start_training: 50

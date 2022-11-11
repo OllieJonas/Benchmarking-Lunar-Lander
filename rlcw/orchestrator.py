@@ -129,4 +129,4 @@ class Results:
 
     def save_to_disk(self):
         file_name = f'{self.agent_name} - {self.date_time}'
-        util.save_file("results", file_name, self._results)
+        util.save_file("results", file_name, self._results.__str__)
