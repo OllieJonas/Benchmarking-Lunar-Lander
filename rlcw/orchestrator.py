@@ -88,7 +88,11 @@ class Runner:
             self.results.add(result_obj)
             self.LOGGER.debug(result_obj)
 
-            if terminated or truncated:
+            if terminated:
+                episode_count += 1
+                observation, info = self.env.reset()
+
+            if truncated:
                 observation, info = self.env.reset()
 
 
