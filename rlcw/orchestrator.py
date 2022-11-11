@@ -25,6 +25,7 @@ class Orchestrator:
     def run(self):
         self.runner = Runner(self.env, self.agent, self.config, seed=self.seed)
         self.runner.run(from_jupyter=self.from_jupyter)
+        self.env.close()
 
     def eval(self):
         pass
@@ -48,9 +49,16 @@ class Runner:
         observation, info = self.env.reset()
         training_context = []
 
+        max_episodes = self.config["episodes"]["max"]
+        episode_count = 1
+
         # display
         image = plt.imshow(self.env.render()) if from_jupyter else None
+
         for t in range(self.config["timesteps"]["total"]):
+            if episode_count > max_episodes:
+                break
+
             action = self.agent.get_action(observation)
             next_observation, reward, terminated, truncated, info = self.env.step(action)
 
@@ -82,8 +90,6 @@ class Runner:
 
             if terminated or truncated:
                 observation, info = self.env.reset()
-
-        self.env.close()
 
 
 class Results:

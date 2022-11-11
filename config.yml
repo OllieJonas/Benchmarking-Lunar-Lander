@@ -1,6 +1,8 @@
 agent: "random"
 verbose: false
 render: true
+episodes:
+  max: 600
 timesteps:
-  total: 200
+  total: 20
   start_training: 50
