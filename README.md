@@ -50,10 +50,17 @@ Now, unfortunately, Docker can be very confusing to install.
       2. Go to the Startup Tab
       3. Find Docker Desktop, right click and click Disable.
 
-#### Running the Program
+## Running the Program
 
-Once this is all done, you just need to run either the run.batch (for Windows) or run.sh (for UNIX) scripts in the root directory.
+For UNIX-based systems, you just need to run the program like any old python program (using main.py as the main module). 
+  
+For Windows, you need to run the run.bat file in the root directory. Running the run.bat script will start a Jupyter server, which by default you'll be able to access by going to [localhost:8888](http://localhost:8888). Check the console for more details.
+  
+### Jupyter vs Python
 
+You are able to run this program from both a Jupyter server, and just as straight Python. The reason for this is that we're essentially using Jupyter as a hack to render the environment for Windows. None of us actually like Jupyter, so it's purely there to render - there's no actual substance in the notebook.
+
+### Final Notes  
 I've tried my best to set this project up such that we don't ever need to worry about the Docker part of it. Hopefully, once its installed, we won't need to worry about it ! :)
 
 If you ever need to add a dependency to the project, just add it to the requirements.txt - Docker will automatically sort it out for you.
