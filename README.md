@@ -59,6 +59,8 @@ For Windows, you need to run the run.bat file in the root directory. Running the
 ### Jupyter vs Python
 
 You are able to run this program from both a Jupyter server, and just as straight Python. The reason for this is that we're essentially using Jupyter as a hack to render the environment for Windows. None of us actually like Jupyter, so it's purely there to render - there's no actual substance in the notebook.
+
+### Final Notes  
 I've tried my best to set this project up such that we don't ever need to worry about the Docker part of it. Hopefully, once its installed, we won't need to worry about it ! :)
 
 If you ever need to add a dependency to the project, just add it to the requirements.txt - Docker will automatically sort it out for you.
