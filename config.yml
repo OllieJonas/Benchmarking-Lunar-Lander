@@ -1,8 +1,11 @@
-agent: "random"
-verbose: false
-render: true
-episodes:
-  max: 600
-timesteps:
-  total: 200
-  start_training: 50
+overall:
+  agent_name: "random"
+  output:
+    render: true
+    save_timesteps: true
+    verbose: false
+  episodes:
+    max: 600
+  timesteps:
+    max: 200
+    start_training: 50

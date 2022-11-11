@@ -46,7 +46,7 @@ def setup():
 
     LOGGER = util.init_logger("Main")
 
-    logger_level = logging.DEBUG if config["verbose"] else logging.INFO
+    logger_level = logging.DEBUG if config["overall"]["output"]["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
     util.set_logger_level(logger_level)
@@ -54,7 +54,7 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     env = _make_env()
-    agent = get_agent(config["agent"], env.action_space)
+    agent = get_agent(config["overall"]["agent"], env.action_space)
 
     return env, agent, config
 
