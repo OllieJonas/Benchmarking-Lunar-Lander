@@ -113,7 +113,7 @@ class Results:
             self.reward = reward
 
         def __repr__(self):
-            return f'Timestep {self.timestep}: State: {self.state}, Reward: {self.reward}'
+            return f't {self.timestep}: s: {self.state}, r: {self.reward}'
 
     def __init__(self, agent_name, date_time):
         self.agent_name = agent_name
