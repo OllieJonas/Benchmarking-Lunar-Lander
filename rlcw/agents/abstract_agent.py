@@ -5,8 +5,9 @@ from typing import NoReturn, List
 
 class AbstractAgent:
 
-    def __init__(self, action_space):
+    def __init__(self, action_space, config):
         self.action_space = action_space
+        self.config = config
 
     def name(self):
         raise NotImplementedError("This hasn't been implemented yet! :(")

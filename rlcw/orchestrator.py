@@ -44,7 +44,8 @@ class Orchestrator:
         self.results = self.runner.run()
         self.env.close()
 
-        self.results.save_to_disk()
+        if self.should_save_timesteps:
+            self.results.save_to_disk()
 
     def eval(self):
         self.evaluator = Evaluator(self.results)

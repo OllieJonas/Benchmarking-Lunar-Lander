@@ -9,3 +9,7 @@ overall:
   timesteps:
     max: 200
     start_training: 50
+agents:
+  random:
+  random2:
+
