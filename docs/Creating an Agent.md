@@ -71,8 +71,8 @@ where the index of the list represents that timestep.
 This dict object looks like this:
 
 `
-{"curr_obsv": observation,
-"next_obsv": next_observation,
+{"curr_state": state,
+"next_state": next_state,
 "reward": reward,
 "action": action
 }

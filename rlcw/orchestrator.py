@@ -46,7 +46,7 @@ class Runner:
         self.results = Results()
 
     def run(self, from_jupyter: bool = False):
-        observation, info = self.env.reset()
+        state, info = self.env.reset()
         training_context = []
 
         max_episodes = self.config["episodes"]["max"]
@@ -59,8 +59,8 @@ class Runner:
             if episode_count > max_episodes:
                 break
 
-            action = self.agent.get_action(observation)
-            next_observation, reward, terminated, truncated, info = self.env.step(action)
+            action = self.agent.get_action(state)
+            next_state, reward, terminated, truncated, info = self.env.step(action)
 
             # render
             if self.config["render"]:
@@ -72,8 +72,8 @@ class Runner:
                     self.env.render()
 
             training_context.append({
-                "curr_obsv": observation,
-                "next_obsv": next_observation,
+                "curr_state": state,
+                "next_state": next_state,
                 "reward": reward,
                 "action": action
             })
@@ -81,30 +81,30 @@ class Runner:
             if t > self.config["timesteps"]["start_training"]:
                 self.agent.train(training_context)
 
-            next_observation = observation
+            next_state = state
 
-            result_obj = Results.ResultObj(timestamp=t, observation=observation, reward=reward)
+            result_obj = Results.ResultObj(timestamp=t, state=state, reward=reward)
 
             self.results.add(result_obj)
             self.LOGGER.debug(result_obj)
 
             if terminated:
                 episode_count += 1
-                observation, info = self.env.reset()
+                state, info = self.env.reset()
 
             if truncated:
-                observation, info = self.env.reset()
+                state, info = self.env.reset()
 
 
 class Results:
     class ResultObj:
-        def __init__(self, timestamp, observation, reward):
+        def __init__(self, timestamp, state, reward):
             self.timestamp = timestamp
-            self.observation = observation
+            self.state = state
             self.reward = reward
 
         def __str__(self):
-            return f'Timestep {self.timestamp}: Observation: {self.observation}, Reward: {self.reward}'
+            return f'Timestep {self.timestamp}: State: {self.state}, Reward: {self.reward}'
 
     def __init__(self):
         self._results = []
