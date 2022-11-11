@@ -19,17 +19,21 @@ class Orchestrator:
         self.seed = seed
 
         self.runner = None
+        self.results = None
+
         self.evaluator = None
 
         self._sync_seeds()
 
     def run(self):
         self.runner = Runner(self.env, self.agent, self.config, seed=self.seed)
-        self.runner.run()
+        self.results = self.runner.run()
         self.env.close()
 
+        self.results.save_to_disk()
+
     def eval(self):
-        self.evaluator = Evaluator()
+        self.evaluator = Evaluator(self.results)
 
     def _sync_seeds(self):
         np.random.seed(self.seed)
@@ -85,7 +89,7 @@ class Runner:
                 self.agent.train(training_context)
 
             next_state = state
-            result_obj = Results.ResultObj(timestep=t, state=state, reward=reward)
+            result_obj = Results.ResultObj(episode=curr_episode, timestep=t, state=state, reward=reward)
 
             self.results.add(curr_episode, result_obj)
             self.LOGGER.debug(result_obj)
@@ -96,6 +100,8 @@ class Runner:
 
             if truncated:
                 state, info = self.env.reset()
+
+        return self.results
 
 
 class Results:
@@ -121,5 +127,6 @@ class Results:
 
         self._results[episode].append(result)
 
-    def save(self, file_name):
-        pass
+    def save_to_disk(self):
+        file_name = f'{self.agent_name} - {self.date_time}'
+        util.save_file("results", file_name, self._results)

@@ -1,6 +1,7 @@
 import logging
 import sys
 import os
+import pickle
 
 from datetime import datetime
 
@@ -34,8 +35,9 @@ def get_root_output_path():
     return '../../out/' if using_jupyter else '../out/'
 
 
-def save_file(path):
-    pass
+def save_file(directory, file_name, contents):
+    with open(f'{directory}/{file_name}', 'w') as f:
+        f.write(contents)
 
 
 def init_logger(suffix: str = "") -> logging.Logger:
