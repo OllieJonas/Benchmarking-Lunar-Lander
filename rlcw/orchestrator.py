@@ -82,8 +82,7 @@ class Runner:
                 self.agent.train(training_context)
 
             next_state = state
-
-            result_obj = Results.ResultObj(timestamp=t, state=state, reward=reward)
+            result_obj = Results.ResultObj(timestep=t, state=state, reward=reward)
 
             self.results.add(result_obj)
             self.LOGGER.debug(result_obj)
@@ -98,19 +97,23 @@ class Runner:
 
 class Results:
     class ResultObj:
-        def __init__(self, timestamp, state, reward):
-            self.timestamp = timestamp
+        def __init__(self, episode, timestep, state, reward):
+            self.episode = episode
+            self.timestep = timestep
             self.state = state
             self.reward = reward
 
         def __str__(self):
-            return f'Timestep {self.timestamp}: State: {self.state}, Reward: {self.reward}'
+            return f'Timestep {self.timestep}: State: {self.state}, Reward: {self.reward}'
 
     def __init__(self):
         self._results = []
 
-    def add(self, result: ResultObj):
-        self._results.append(result)
+    def add(self, episode: int, result: ResultObj):
+        if not self._results[episode]:
+            self._results[episode] = []
+
+        self._results[episode].append(result)
 
     def save(self, file_name):
         pass
