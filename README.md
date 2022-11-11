@@ -49,6 +49,13 @@ Now, unfortunately, Docker can be very confusing to install.
       1. Open Task Manager
       2. Go to the Startup Tab
       3. Find Docker Desktop, right click and click Disable.
+  3. Once this is done, all you then need to do is run the run.bat file in the root directory.
+
+Running the run.bat script will start a Jupyter server, which by default you'll be able to access by going to [localhost:8888](http://localhost:8888). Check the console for more details.
+
+#### Jupyter vs Python
+
+You are able to run this program from both a Jupyter server, and just as straight Python. The reason for this is that we're essentially using Jupyter as a hack to render the environment for Windows. None of us actually like Jupyter, so it's purely there to render - there's no actual substance in the notebook.
 
 #### Running the Program
 
