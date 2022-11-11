@@ -6,20 +6,18 @@ import yaml
 from rlcw.agents.abstract_agent import AbstractAgent
 from rlcw.agents.random import RandomAgent
 from rlcw.orchestrator import Orchestrator
-from rlcw.util import init_logger, make_dir, set_logger_level
+import rlcw.util as util
 
-LOGGER = init_logger(suffix="Main")
-USING_JUPYTER = False
+LOGGER: logging.Logger
 
 
 def _make_env():
-    return gym.make("LunarLander-v2", render_mode="rgb_array") if USING_JUPYTER \
+    return gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() \
         else gym.make("LunarLander-v2", render_mode="human")
 
 
 def enable_jupyter(value: bool = True):
-    global USING_JUPYTER
-    USING_JUPYTER = value
+    util.set_using_jupyter(value)
 
 
 def main():
@@ -36,14 +34,22 @@ def get_agent(name: str, action_space) -> AbstractAgent:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
 
+def is_using_jupyter():
+    return util.is_using_jupyter()
+
+
 def setup():
-    config = _parse_config("../../config.yml" if USING_JUPYTER else "../config.yml")
+    global LOGGER
+
+    config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
     _make_dirs()
+
+    LOGGER = util.init_logger("Main")
 
     logger_level = logging.DEBUG if config["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
-    set_logger_level(logger_level)
+    util.set_logger_level(logger_level)
 
     LOGGER.debug(f'Config: {config}')
 
@@ -54,12 +60,14 @@ def setup():
 
 
 def _make_dirs():
-    root_path = "../"
+    root_path = util.get_root_output_path()
+    util.make_dir(root_path)
+
     results_path = f'{root_path}results'
     policies_path = f'{root_path}policies'
 
-    make_dir(results_path, logger=LOGGER)
-    make_dir(policies_path, logger=LOGGER)
+    util.make_dir(results_path)
+    util.make_dir(policies_path)
 
 
 def _parse_config(path="../config.yml"):

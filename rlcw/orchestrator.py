@@ -4,10 +4,10 @@ import torch
 
 from IPython import display
 
-from rlcw.main import USING_JUPYTER
+import rlcw.util as util
+
 from rlcw.evaluator import Evaluator
 from rlcw.agents.abstract_agent import AbstractAgent
-from rlcw.util import init_logger
 
 
 class Orchestrator:
@@ -39,12 +39,12 @@ class Orchestrator:
 class Runner:
 
     def __init__(self, env, agent: AbstractAgent, config, seed: int = 42):
-        self.LOGGER = init_logger("Runner")
+        self.LOGGER = util.init_logger("Runner")
         self.env = env
         self.agent = agent
         self.config = config
         self.seed = seed
-        self.results = Results()
+        self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
 
     def run(self):
         state, info = self.env.reset()
@@ -53,8 +53,10 @@ class Runner:
         max_episodes = self.config["episodes"]["max"]
         curr_episode = 0
 
+        is_using_jupyter = util.is_using_jupyter()
+
         # display
-        image = plt.imshow(self.env.render()) if USING_JUPYTER else None
+        image = plt.imshow(self.env.render()) if is_using_jupyter else None
 
         for t in range(self.config["timesteps"]["total"]):
             if curr_episode > max_episodes:
@@ -65,7 +67,7 @@ class Runner:
 
             # render
             if self.config["render"]:
-                if USING_JUPYTER:
+                if is_using_jupyter:
                     image.set_data(self.env.render())
                     display.display(plt.gcf())
                     display.clear_output(wait=True)
@@ -107,7 +109,10 @@ class Results:
         def __str__(self):
             return f'Timestep {self.timestep}: State: {self.state}, Reward: {self.reward}'
 
-    def __init__(self):
+    def __init__(self, agent_name, date_time):
+        self.agent_name = agent_name
+        self.date_time = date_time
+
         self._results = []
 
     def add(self, episode: int, result: ResultObj):
