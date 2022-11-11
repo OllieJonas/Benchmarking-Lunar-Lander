@@ -63,11 +63,13 @@ def setup():
 
 
 def _make_dirs():
-    root_path = util.get_root_output_path()
-    util.make_dir(root_path)
+    util.make_dir(util.get_output_root_path())
 
-    results_path = f'{root_path}results'
-    policies_path = f'{root_path}policies'
+    session_path = util.get_curr_session_output_path()
+    util.make_dir(session_path)
+
+    results_path = f'{session_path}results'
+    policies_path = f'{session_path}policies'
 
     util.make_dir(results_path)
     util.make_dir(policies_path)

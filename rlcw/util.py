@@ -31,12 +31,16 @@ def set_logger_level(level):
     logger_level = level
 
 
-def get_root_output_path():
-    return '../../out/' if using_jupyter else '../out/'
+def get_output_root_path():
+    return f'{"../" if using_jupyter else ""}../out/'
+
+
+def get_curr_session_output_path():
+    return f'{get_output_root_path()}{CURR_DATE_TIME}/'
 
 
 def save_file(directory, file_name, contents):
-    with open(f'{get_root_output_path()}/{directory}/{file_name}', 'w') as f:
+    with open(f'{get_curr_session_output_path()}/{directory}/{file_name}', 'w') as f:
         f.write(contents)
 
 
@@ -48,10 +52,10 @@ def init_logger(suffix: str = "") -> logging.Logger:
     Please only call this once in a given file, then store it for everything else.
     """
     NAME = "RL-CW"
-    logs_dir = f'{get_root_output_path()}logs'
+    logs_dir = f'{get_curr_session_output_path()}logs'
     make_dir(logs_dir)
 
-    logging.basicConfig(filename=f'{logs_dir}/{CURR_DATE_TIME}.log', level=logger_level)
+    logging.basicConfig(filename=f'{logs_dir}/stdout.log', level=logger_level)
 
     logger = logging.getLogger(f'{NAME} {suffix}')
 

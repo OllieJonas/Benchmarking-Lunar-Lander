@@ -137,20 +137,23 @@ class Results:
             self.reward = reward
 
         def __repr__(self):
-            return f't {self.timestep}: s: {self.state}, r: {self.reward}'
+            return f'<t {self.timestep}: s: {self.state}, r: {self.reward}>'
 
     def __init__(self, agent_name, date_time):
         self.agent_name = agent_name
         self.date_time = date_time
 
-        self._results = []
+        self.results = []
+
+    def __repr__(self):
+        return self.results.__str__()
 
     def add(self, episode: int, result: ResultObj):
-        if len(self._results) != episode + 1:
-            self._results.append([])
+        if len(self.results) != episode + 1:
+            self.results.append([])
 
-        self._results[episode].append(result)
+        self.results[episode].append(result)
 
     def save_to_disk(self):
         file_name = f'{self.agent_name} - {self.date_time}'
-        util.save_file("results", file_name, self._results.__str__())
+        util.save_file("results", file_name, self.results.__str__())
