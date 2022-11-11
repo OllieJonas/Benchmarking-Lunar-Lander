@@ -1,5 +1,6 @@
-import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 from IPython import display
 
@@ -19,12 +20,18 @@ class Orchestrator:
         self.runner = None
         self.eval = None
 
+        self._sync_seeds()
+
     def run(self):
         self.runner = Runner(self.env, self.agent, self.config, seed=self.seed)
         self.runner.run(from_jupyter=self.from_jupyter)
 
     def eval(self):
         pass
+
+    def _sync_seeds(self):
+        np.random.seed(self.seed)
+        torch.random.manual_seed(self.seed)
 
 
 class Runner:
