@@ -53,6 +53,13 @@ def setup():
     config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
     _make_dirs(config)
 
+    LOGGER = util.init_logger("Main")
+
+    logger_level = logging.DEBUG if config["overall"]["output"]["verbose"] else logging.INFO
+
+    LOGGER.setLevel(logger_level)
+    util.set_logger_level(logger_level)
+
     # can't render in human mode and record at the same time
     should_record = config["overall"]["output"]["save"]["recordings"]
     should_render = config["overall"]["output"]["render"]
@@ -60,13 +67,6 @@ def setup():
     if should_render and should_record:
         LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
         should_record = False
-
-    LOGGER = util.init_logger("Main")
-
-    logger_level = logging.DEBUG if config["overall"]["output"]["verbose"] else logging.INFO
-
-    LOGGER.setLevel(logger_level)
-    util.set_logger_level(logger_level)
 
     LOGGER.debug(f'Config: {config}')
 
