@@ -64,7 +64,8 @@ class Orchestrator:
             self.results.save_to_disk()
 
     def eval(self):
-        self.evaluator = eval.Evaluator(self.results, self.should_save_charts, self.should_save_csv)
+        self.evaluator = eval.Evaluator(self.results, self.should_save_charts, self.should_save_csv,
+                                        agent_name=self.agent.name())
         self.evaluator.eval()
 
     def _sync_seeds(self):

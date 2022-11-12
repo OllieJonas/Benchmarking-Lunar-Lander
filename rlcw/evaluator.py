@@ -31,12 +31,14 @@ def save_as_csv(name, cumulative_rewards, average_rewards, no_timesteps):
 
 
 class Evaluator:
-    def __init__(self, results, should_save_charts, should_save_csv):
+    def __init__(self, results, should_save_charts, should_save_csv, agent_name: str = ""):
         self.LOGGER = util.init_logger("Evaluator")
 
         self.results = results
         self.should_save_charts = should_save_charts
         self.should_save_csv = should_save_csv
+
+        self.agent_name = agent_name
 
     def eval(self):
         self._eval_non_detailed()
@@ -53,12 +55,12 @@ class Evaluator:
         self.LOGGER.info(f'No Timesteps: {no_timesteps}')
 
         if self.should_save_charts:
-            save_plot_as_image("cumulative_rewards", "Cumulative Reward over each Episode", cumulative_rewards,
-                      "Episode", "Reward")
-            save_plot_as_image("average_rewards", "Average Reward over each Episode", average_rewards,
-                      "Episode", "Reward")
-            save_plot_as_image("no_timesteps", "Number of Timesteps", no_timesteps, "Episode",
-                      "No Timesteps")
+            save_plot_as_image(f"cumulative_rewards ({self.agent_name}).png", "Cumulative Reward over each Episode",
+                               cumulative_rewards, "Episode", "Reward")
+            save_plot_as_image(f"average_rewards ({self.agent_name}).png", "Average Reward over each Episode",
+                               average_rewards, "Episode", "Reward")
+            save_plot_as_image(f"no_timesteps ({self.agent_name}).png", "Number of Timesteps",
+                               no_timesteps, "Episode", "No Timesteps")
 
         if self.should_save_csv:
             save_as_csv("results.csv", cumulative_rewards, average_rewards, no_timesteps)
