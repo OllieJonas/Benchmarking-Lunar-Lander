@@ -2,7 +2,7 @@ overall:
   agent_name: "random"
   output:
     verbose: false
-    render: true
+    render: false
     save:
       no_episodes: 1
       csv: true
