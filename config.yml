@@ -3,7 +3,12 @@ overall:
   output:
     verbose: false
     render: true
-    save_timesteps: true
+    save:
+      no_partitions: 5
+      csv: true
+      charts: true
+      raw: false
+      recordings: true
   episodes:
     max: 600
   timesteps:

@@ -11,9 +11,15 @@ import rlcw.util as util
 LOGGER: logging.Logger
 
 
-def _make_env():
-    return gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() \
+def _make_env(should_record, max_episodes, no_partitions):
+    env = gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() \
         else gym.make("LunarLander-v2", render_mode="human")
+
+    if should_record:
+        env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
+                                       episode_trigger=lambda x: x in _split_into_partitions(max_episodes,
+                                                                                             no_partitions))
+    return env
 
 
 def enable_jupyter(value: bool = True):
@@ -45,7 +51,7 @@ def setup():
     global LOGGER
 
     config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
-    _make_dirs()
+    _make_dirs(config)
 
     LOGGER = util.init_logger("Main")
 
@@ -56,28 +62,60 @@ def setup():
 
     LOGGER.debug(f'Config: {config}')
 
-    env = _make_env()
+    env = _make_env(config["overall"]["output"]["save"]["recordings"],
+                    config["overall"]["episodes"]["max"],
+                    config["overall"]["output"]["save"]["no_partitions"])
+
     agent = get_agent(config["overall"]["agent_name"], env.action_space, config["agents"])
 
     return env, agent, config
 
 
-def _make_dirs():
+def _make_dirs(config):
+    save_cfg = config["overall"]["output"]["save"]
+
     util.make_dir(util.get_output_root_path())
 
     session_path = util.get_curr_session_output_path()
     util.make_dir(session_path)
 
-    results_path = f'{session_path}results'
-    policies_path = f'{session_path}policies'
+    policies_path = f'{session_path}policies/'
+    util.make_dir(policies_path)
+
+    results_path = f'{session_path}results/'
+    png_path = f'{results_path}png/'
+    raw_path = f'{results_path}raw/'
+    csv_path = f'{results_path}csv/'
+    recordings_path = f'{results_path}recordings/'
 
     util.make_dir(results_path)
-    util.make_dir(policies_path)
+
+    if save_cfg["charts"]:
+        util.make_dir(png_path)
+
+    if save_cfg["raw"]:
+        util.make_dir(raw_path)
+
+    if save_cfg["csv"]:
+        util.make_dir(csv_path)
+
+    if save_cfg["recordings"]:
+        util.make_dir(recordings_path)
 
 
 def _parse_config(path="../config.yml"):
     with open(path) as file:
         return yaml.safe_load(file)
+
+
+def _split_into_partitions(_max, partitions):
+    """
+    3 -> 0, 100, 199
+    """
+    if partitions <= 0:
+        raise ValueError('partitions can\'t be less than 0')
+    else:
+        return tuple((min(_max - 1, i * _max // partitions) for i in range(partitions + 1)))
 
 
 if __name__ == "__main__":

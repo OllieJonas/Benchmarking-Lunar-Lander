@@ -13,16 +13,6 @@ def save_plot(name, title, data, x_label, y_label):
     plt.savefig(file_name)
 
 
-def split(_max, partitions):
-    """
-    3 -> 0, 100, 199
-    """
-    if partitions <= 0:
-        raise ValueError('partitions can\'t be less than 0')
-    else:
-        return tuple((min(_max - 1, i * _max // partitions) for i in range(partitions + 1)))
-
-
 class Evaluator:
     def __init__(self, results):
         self.results = results

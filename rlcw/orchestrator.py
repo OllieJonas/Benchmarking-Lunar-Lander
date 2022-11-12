@@ -18,9 +18,11 @@ class Orchestrator:
         self.config = config
         self.seed = seed
 
+        _save_cfg = config["overall"]["output"]["save"]
+
         # runner stuff
         self.should_render = config["overall"]["output"]["render"]
-        self.should_save_timesteps = config["overall"]["output"]["save_timesteps"]
+        self.should_save_raw = _save_cfg["raw"]
 
         self.max_episodes = config["overall"]["episodes"]["max"]
 
@@ -31,6 +33,8 @@ class Orchestrator:
         self.results = None
 
         # eval stuff
+        self.should_save_charts = _save_cfg["charts"]
+        self.should_save_csv = _save_cfg["csv"]
 
         self.evaluator = None
 
@@ -46,7 +50,7 @@ class Orchestrator:
         self.results = self.runner.run()
         self.env.close()
 
-        if self.should_save_timesteps:
+        if self.should_save_raw:
             self.results.save_to_disk()
 
     def eval(self):
