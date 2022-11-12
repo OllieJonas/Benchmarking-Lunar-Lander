@@ -1,6 +1,9 @@
 # The Configuration File
 In the root directory, there is a config.yml, which allows you to change certain things about it.
 
+_NOTE: The config.yml is included in the .gitignore to stop people from overwriting other people's settings. If you
+add something to the config, please ignore the .gitignore and commit it anyways._
+
 Below, there is a table of each thing in the config, and what it does:
 
 | Name           | Description                                                                                                                                                                                                                                                                                                   | Data Type | Notes                                                                                                                                            |

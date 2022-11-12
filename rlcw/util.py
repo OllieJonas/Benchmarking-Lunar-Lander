@@ -1,8 +1,6 @@
 import logging
-import sys
 import os
-import pickle
-
+import sys
 from datetime import datetime
 
 CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
@@ -26,11 +24,6 @@ def is_using_jupyter():
     return using_jupyter
 
 
-def set_logger_level(level):
-    global logger_level
-    logger_level = level
-
-
 def get_output_root_path():
     return f'{"../" if using_jupyter else ""}../out/'
 
@@ -42,6 +35,11 @@ def get_curr_session_output_path():
 def save_file(directory, file_name, contents):
     with open(f'{get_curr_session_output_path()}/{directory}/{file_name}', 'w') as f:
         f.write(contents)
+
+
+def set_logger_level(level):
+    global logger_level
+    logger_level = level
 
 
 def init_logger(suffix: str = "") -> logging.Logger:
