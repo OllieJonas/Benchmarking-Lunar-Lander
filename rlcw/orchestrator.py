@@ -155,14 +155,14 @@ class Results:
         self.agent_name = agent_name
         self.date_time = date_time
 
-        self.results = []
+        self.results = {}
 
     def __repr__(self):
         return self.results.__str__()
 
     def add(self, episode: int, result: ResultObj):
-        if len(self.results) != episode + 1:
-            self.results.append([])
+        if episode not in self.results:
+            self.results[episode] = []
 
         self.results[episode].append(result)
 

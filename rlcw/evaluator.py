@@ -23,7 +23,7 @@ class Evaluator:
     def rewards_per_episode(self):
         if self.rewards_per_episodes is None:
             self.rewards_per_episodes = [np.fromiter(map(lambda t: t.reward, episode), dtype=float)
-                                         for episode in self.results.results]
+                                         for episode in self.results.results.values()]
         return self.rewards_per_episodes
 
     def rewards_ignoring_episodes(self):
@@ -39,6 +39,7 @@ class Evaluator:
         return [episode.size for episode in self.rewards_per_episode()]
 
     def eval(self):
+        self.LOGGER.debug(f'Raw: {self.results.results}')
         self.LOGGER.info(f'Rewards (per Episode): {self.rewards_per_episode()}')
         self.LOGGER.info(f'Rewards (ignoring Episodes): {self.rewards_ignoring_episodes()}')
         self.LOGGER.info(f'Cumulative Rewards (per Episode): {self.cumulative_rewards_per_episode()}')
