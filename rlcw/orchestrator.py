@@ -64,7 +64,7 @@ class Orchestrator:
             self.results.save_to_disk()
 
     def eval(self):
-        self.evaluator = eval.Evaluator(self.results)
+        self.evaluator = eval.Evaluator(self.results, self.should_save_charts, self.should_save_csv)
         self.evaluator.eval()
 
     def _sync_seeds(self):
@@ -133,10 +133,9 @@ class Runner:
 
             state = next_state
 
-            if curr_episode in self.episodes_to_save:
-                result_obj = Results.Timestep(state=state, action=action, reward=reward)
-                self.results.add(curr_episode, result_obj)
-                self.LOGGER.debug(result_obj)
+            timestep_result = Results.Timestep(state=state, action=action, reward=reward)
+            self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+            self.LOGGER.debug(timestep_result)
 
             if terminated:
                 curr_episode += 1
@@ -187,7 +186,15 @@ class Results:
             if store_detailed:
                 self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
 
-            print(self.timestep_buffer)
+            self.curr_episode = episode
+
+            rewards = np.fromiter(map(lambda t: t.reward, self.timestep_buffer), dtype=float)
+            cumulative = np.sum(rewards)
+            avg = np.average(rewards)
+            no_timesteps = rewards.size
+
+            episode_summary = (cumulative, avg, no_timesteps)
+            self.results.append(episode_summary)
             # flush buffer
             self.timestep_buffer = []
 

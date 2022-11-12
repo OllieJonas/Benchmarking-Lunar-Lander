@@ -1,52 +1,48 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 import rlcw.util as util
 
 
 def save_plot(name, title, data, x_label, y_label):
-    file_name = f'{util.get_curr_session_output_path()}/results/{name}{"" if name.endswith(".png") else ".png"}'
+    file_name = f'{util.get_curr_session_output_path()}/results/png/{name}{"" if name.endswith(".png") else ".png"}'
     plt.plot(data)
+
+    plt.ticklabel_format(style='plain', axis='x', useOffset=False)
+    plt.gca().xaxis.set_major_locator(ticker.MultipleLocator(1))
+
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+
     plt.savefig(file_name)
-
-
-def rewards_per_episode():
-    rewards_per_episodes = [np.fromiter(map(lambda t: t.reward, episode), dtype=float)
-                            for episode in results.results.values()]
-    return rewards_per_episodes
-
-
-def rewards_ignoring_episodes(rewards):
-    return np.concatenate(rewards).ravel()
-
-
-def cumulative_rewards_per_episode(rewards):
-    return [np.sum(episode) for episode in rewards]
-
-
-def average_rewards_per_episode(rewards):
-    return [np.average(episode) for episode in rewards]
-
-
-def no_timesteps_per_episode(rewards):
-    return [episode.size for episode in rewards]
+    plt.close()
 
 
 class Evaluator:
-    def __init__(self, results):
+    def __init__(self, results, should_save_charts, should_save_csv):
         self.LOGGER = util.init_logger("Evaluator")
 
         self.results = results
-        self.rewards_per_episodes = None
+        self.should_save_charts = should_save_charts
+        self.should_save_csv = should_save_csv
 
     def eval(self):
-        self.LOGGER.debug(f'Raw: {self.results.results}')
-        self.LOGGER.debug(f'Rewards (per Episode): {self.rewards_per_episode()}')
-        self.LOGGER.debug(f'Rewards (ignoring Episodes): {self.rewards_ignoring_episodes()}')
-        self.LOGGER.info(f'Cumulative Rewards (per Episode): {self.cumulative_rewards_per_episode()}')
-        self.LOGGER.info(f'Average Rewards (per Episode): {self.average_rewards_per_episode()}')
-        self.LOGGER.info(f'No Timesteps (per Episode): {self.no_timesteps_per_episode()}')
+        cumulative_rewards = [x[0] for x in self.results.results]
+        average_rewards = [x[1] for x in self.results.results]
+        no_timesteps = [x[2] for x in self.results.results]
+
+        self.LOGGER.info(f'Cumulative Rewards: {cumulative_rewards}')
+        self.LOGGER.info(f'Average Rewards: {average_rewards}')
+        self.LOGGER.info(f'No Timesteps: {no_timesteps}')
+
+        if self.should_save_charts:
+            save_plot("cumulative_rewards", "Cumulative Reward over each Episode", cumulative_rewards,
+                      "Episode", "Reward")
+            save_plot("average_rewards", "Average Reward over each Episode", average_rewards,
+                      "Episode", "Reward")
+            save_plot("no_timesteps", "Number of Timesteps", no_timesteps, "Episode",
+                      "No Timesteps")
+
         return self.results
