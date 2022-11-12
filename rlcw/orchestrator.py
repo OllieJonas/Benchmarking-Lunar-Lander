@@ -18,7 +18,7 @@ class Orchestrator:
         self.config = config
         self.seed = seed
 
-        # getting necessary stuff out of config
+        # runner stuff
         self.should_render = config["overall"]["output"]["render"]
         self.should_save_timesteps = config["overall"]["output"]["save_timesteps"]
 
@@ -29,6 +29,8 @@ class Orchestrator:
 
         self.runner = None
         self.results = None
+
+        # eval stuff
 
         self.evaluator = None
 

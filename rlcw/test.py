@@ -25,19 +25,10 @@ def main():
     cumulative_rewards = [np.sum(i) for i in reward_list_per_episode]
     avg_rewards = [np.average(i) for i in reward_list_per_episode]
 
-    save_plot("cumulative_rewards", "Cumulative Rewards per Episode", cumulative_rewards, "Episode", "Cumulative Rewards")
-
+    print(reward_list_per_episode)
+    print(rewards_ignoring_episodes)
     print(avg_rewards)
     print(cumulative_rewards)
-
-
-def save_plot(name, title, data, x_label, y_label):
-    file_name = f'{util.get_curr_session_output_path()}/results/{name}{"" if name.endswith(".png") else ".png"}'
-    plt.plot(data)
-    plt.title(title)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.savefig(file_name)
 
 
 if __name__ == "__main__":
