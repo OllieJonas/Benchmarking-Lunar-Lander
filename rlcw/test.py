@@ -11,13 +11,13 @@ def main():
     #          - 1.2857395e-03, -2.5588963e-02, 0.0000000e+00, 0.0000000e+00]
 
     results = Results("random", util.CURR_DATE_TIME)
-    results.add(0, Results.ResultObj(0, 0, state, 3))
-    results.add(1, Results.ResultObj(0, 1, state, 5))
-    results.add(2, Results.ResultObj(0, 2, state, 4))
-    results.add(3, Results.ResultObj(0, 3, state, 9))
-    results.add(4, Results.ResultObj(0, 4, state, 8))
-    results.add(5, Results.ResultObj(0, 5, state, 2))
-    results.add(6, Results.ResultObj(0, 6, state, 12))
+    results.add(0, Results.Timestep(0, 0, state, 3))
+    results.add(1, Results.Timestep(0, 1, state, 5))
+    results.add(2, Results.Timestep(0, 2, state, 4))
+    results.add(3, Results.Timestep(0, 3, state, 9))
+    results.add(4, Results.Timestep(0, 4, state, 8))
+    results.add(5, Results.Timestep(0, 5, state, 2))
+    results.add(6, Results.Timestep(0, 6, state, 12))
 
     results = results.results
     reward_list_per_episode = [np.fromiter(map(lambda t: t.reward, episode), dtype=float) for episode in results]

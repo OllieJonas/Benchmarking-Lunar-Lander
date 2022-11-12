@@ -13,30 +13,34 @@ def save_plot(name, title, data, x_label, y_label):
     plt.savefig(file_name)
 
 
+def rewards_per_episode():
+    rewards_per_episodes = [np.fromiter(map(lambda t: t.reward, episode), dtype=float)
+                            for episode in results.results.values()]
+    return rewards_per_episodes
+
+
+def rewards_ignoring_episodes(rewards):
+    return np.concatenate(rewards).ravel()
+
+
+def cumulative_rewards_per_episode(rewards):
+    return [np.sum(episode) for episode in rewards]
+
+
+def average_rewards_per_episode(rewards):
+    return [np.average(episode) for episode in rewards]
+
+
+def no_timesteps_per_episode(rewards):
+    return [episode.size for episode in rewards]
+
+
 class Evaluator:
     def __init__(self, results):
         self.LOGGER = util.init_logger("Evaluator")
 
         self.results = results
         self.rewards_per_episodes = None
-
-    def rewards_per_episode(self):
-        if self.rewards_per_episodes is None:
-            self.rewards_per_episodes = [np.fromiter(map(lambda t: t.reward, episode), dtype=float)
-                                         for episode in self.results.results.values()]
-        return self.rewards_per_episodes
-
-    def rewards_ignoring_episodes(self):
-        return np.concatenate(self.rewards_per_episode()).ravel()
-
-    def cumulative_rewards_per_episode(self):
-        return [np.sum(episode) for episode in self.rewards_per_episode()]
-
-    def average_rewards_per_episode(self):
-        return [np.average(episode) for episode in self.rewards_per_episode()]
-
-    def no_timesteps_per_episode(self):
-        return [episode.size for episode in self.rewards_per_episode()]
 
     def eval(self):
         self.LOGGER.debug(f'Raw: {self.results.results}')

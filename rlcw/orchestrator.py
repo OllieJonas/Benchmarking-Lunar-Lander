@@ -3,11 +3,13 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+
 from IPython import display
 
 import rlcw.util as util
+
+import rlcw.evaluator as eval
 from rlcw.agents.abstract_agent import AbstractAgent
-from rlcw.evaluator import Evaluator
 
 
 class Orchestrator:
@@ -62,7 +64,7 @@ class Orchestrator:
             self.results.save_to_disk()
 
     def eval(self):
-        self.evaluator = Evaluator(self.results)
+        self.evaluator = eval.Evaluator(self.results)
         self.evaluator.eval()
 
     def _sync_seeds(self):
