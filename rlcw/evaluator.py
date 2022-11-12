@@ -15,6 +15,8 @@ def save_plot(name, title, data, x_label, y_label):
 
 class Evaluator:
     def __init__(self, results):
+        self.LOGGER = util.init_logger("Evaluator")
+
         self.results = results
         self.rewards_per_episodes = None
 
@@ -37,4 +39,9 @@ class Evaluator:
         return [episode.size for episode in self.rewards_per_episode()]
 
     def eval(self):
+        self.LOGGER.info(f'Rewards (per Episode): {self.rewards_per_episode()}')
+        self.LOGGER.info(f'Rewards (ignoring Episodes): {self.rewards_ignoring_episodes()}')
+        self.LOGGER.info(f'Cumulative Rewards (per Episode): {self.cumulative_rewards_per_episode()}')
+        self.LOGGER.info(f'Average Rewards (per Episode): {self.average_rewards_per_episode()}')
+        self.LOGGER.info(f'No Timesteps (per Episode): {self.no_timesteps_per_episode()}')
         return self.results
