@@ -34,11 +34,17 @@ def main():
 
 
 def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
-    name = name.lower()
+    """
+    To add an agent, do the following template:
+    elif name == "<your agents name">:
+        return <Your Agent Class>(logger, action_space, cfg)
+    """
     cfg = agents_config[name] if name in agents_config else None
+    logger = util.init_logger(f'{name.upper()} (Agent)')
+    name = name.lower()
 
     if name == "random":
-        return RandomAgent(action_space, cfg)
+        return RandomAgent(logger, action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -51,10 +57,15 @@ def setup():
     global LOGGER
 
     config = _parse_config()
-    _make_dirs(config)
     
     config_overall = config["overall"]
     config_output = config_overall["output"]
+
+    agent_name = config_overall["agent_name"]
+
+    util.set_agent_name(agent_name)
+
+    _make_dirs(config, agent_name)
 
     LOGGER = util.init_logger("Main")
 
@@ -81,14 +92,13 @@ def setup():
     save_partitions = _split_into_partitions(max_episodes, no_episodes_to_save)
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(config_overall["agent_name"], env.action_space, config["agents"])
+    agent = get_agent(agent_name, env.action_space, config["agents"])
 
     return env, agent, config, save_partitions
 
 
 def _make_dirs(config, agent_name):
     save_cfg = config["overall"]["output"]["save"]
-    util.set_agent_name(agent_name)
     util.make_dir(util.get_output_root_path())
 
     session_path = util.get_curr_session_output_path()

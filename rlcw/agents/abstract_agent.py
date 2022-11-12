@@ -5,7 +5,8 @@ from typing import NoReturn, List
 
 class AbstractAgent:
 
-    def __init__(self, action_space, config):
+    def __init__(self, logger, action_space, config):
+        self.logger = logger
         self.action_space = action_space
         self.config = config
 
