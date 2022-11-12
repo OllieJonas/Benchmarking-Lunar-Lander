@@ -11,9 +11,9 @@ import rlcw.util as util
 LOGGER: logging.Logger
 
 
-def _make_env(should_record, episodes_to_save):
-    env = gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() or should_record \
-        else gym.make("LunarLander-v2", render_mode="human")
+def _make_env(env_name, should_record, episodes_to_save):
+    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+        else gym.make(env_name, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -52,17 +52,18 @@ def setup():
 
     config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
     _make_dirs(config)
-
+    
+    config_overall = config["overall"]
     LOGGER = util.init_logger("Main")
 
-    logger_level = logging.DEBUG if config["overall"]["output"]["verbose"] else logging.INFO
+    logger_level = logging.DEBUG if config_overall["output"]["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
     util.set_logger_level(logger_level)
 
     # can't render in human mode and record at the same time
-    should_record = config["overall"]["output"]["save"]["recordings"]
-    should_render = config["overall"]["output"]["render"]
+    should_record = config_overall["output"]["save"]["recordings"]
+    should_render = config_overall["output"]["render"]
 
     if should_render and should_record:
         LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
@@ -70,13 +71,15 @@ def setup():
 
     LOGGER.debug(f'Config: {config}')
 
-    max_episodes = config["overall"]["episodes"]["max"]
-    no_episodes_to_save = config["overall"]["output"]["save"]["no_episodes"]
+    max_episodes = config_overall["episodes"]["max"]
+    no_episodes_to_save = config_overall["output"]["save"]["no_episodes"]
+
+    env_name = config_overall["env_name"]
 
     save_partitions = _split_into_partitions(max_episodes, no_episodes_to_save)
-    env = _make_env(should_record, save_partitions)
+    env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(config["overall"]["agent_name"], env.action_space, config["agents"])
+    agent = get_agent(config_overall["agent_name"], env.action_space, config["agents"])
 
     return env, agent, config, save_partitions
 

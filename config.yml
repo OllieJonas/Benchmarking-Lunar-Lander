@@ -1,5 +1,6 @@
 overall:
   agent_name: "random"
+  env_name: "LunarLander-v2"
   output:
     verbose: false
     render: false
