@@ -6,6 +6,7 @@ import copy
 from datetime import datetime
 
 CURR_DATE_TIME = None
+AGENT_NAME = None
 
 using_jupyter = False
 
@@ -15,15 +16,6 @@ logger_level = logging.INFO
 def make_dir(name: str):
     if not os.path.exists(name):
         os.mkdir(name)
-
-
-def set_using_jupyter(value: bool):
-    global using_jupyter
-    using_jupyter = value
-
-
-def is_using_jupyter():
-    return using_jupyter
 
 
 def get_project_root_path():
@@ -40,7 +32,7 @@ def get_curr_session_output_path():
     if CURR_DATE_TIME is None:
         CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
 
-    return f'{get_output_root_path()}{CURR_DATE_TIME}/'
+    return f'{get_output_root_path()}{AGENT_NAME} - {CURR_DATE_TIME}/'
 
 
 def save_file(directory, file_name, contents):
@@ -48,9 +40,23 @@ def save_file(directory, file_name, contents):
         f.write(contents)
 
 
+def is_using_jupyter():
+    return using_jupyter
+
+
+def set_using_jupyter(value: bool):
+    global using_jupyter
+    using_jupyter = value
+
+
 def set_logger_level(level):
     global logger_level
     logger_level = level
+
+
+def set_agent_name(agent_name):
+    global AGENT_NAME
+    AGENT_NAME = agent_name
 
 
 def init_logger(suffix: str = "") -> logging.Logger:

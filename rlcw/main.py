@@ -86,9 +86,9 @@ def setup():
     return env, agent, config, save_partitions
 
 
-def _make_dirs(config):
+def _make_dirs(config, agent_name):
     save_cfg = config["overall"]["output"]["save"]
-
+    util.set_agent_name(agent_name)
     util.make_dir(util.get_output_root_path())
 
     session_path = util.get_curr_session_output_path()
