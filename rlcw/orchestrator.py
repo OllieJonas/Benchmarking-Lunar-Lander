@@ -1,18 +1,20 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-
 from IPython import display
 
 import rlcw.util as util
-
-from rlcw.evaluator import Evaluator
 from rlcw.agents.abstract_agent import AbstractAgent
+from rlcw.evaluator import Evaluator
 
 
 class Orchestrator:
 
     def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
+        self.LOGGER = util.init_logger("Orchestrator")
+
         self.env = env
         self.agent = agent
         self.config = config
@@ -31,6 +33,7 @@ class Orchestrator:
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
 
         self.runner = None
+        self.time_taken = 0.
         self.results = None
 
         # eval stuff
@@ -49,7 +52,10 @@ class Orchestrator:
                              max_episodes=self.max_episodes,
                              start_training_timesteps=self.start_training_timesteps)
 
+        self.LOGGER.info(f'Running agent {self.agent.name()} ...')
         self.results = self.runner.run()
+        # self.time_taken = end - start
+        self.LOGGER.info(f'Time Taken: {self.time_taken}')
         self.env.close()
 
         if self.should_save_raw:
@@ -123,7 +129,7 @@ class Runner:
             if t > self.start_training_timesteps:
                 self.agent.train(training_context)
 
-            next_state = state
+            state = next_state
 
             if curr_episode in self.episodes_to_save:
                 result_obj = Results.ResultObj(episode=curr_episode, timestep=t, state=state, reward=reward)

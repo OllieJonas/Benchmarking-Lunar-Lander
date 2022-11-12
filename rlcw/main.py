@@ -27,7 +27,7 @@ def enable_jupyter(value: bool = True):
 
 def main():
     env, agent, config, episodes_to_save = setup()
-    LOGGER.info(f'Saving episodes: {episodes_to_save}')
+    LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
     orchestrator = Orchestrator(env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
     orchestrator.eval()
