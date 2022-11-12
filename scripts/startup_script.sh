@@ -1,3 +1,3 @@
 #!/bin/bash
-cd rlcw/notebooks
-jupyter notebook --allow-root --ip='*' --NotebookApp.token='' --NotebookApp.password=''
+cd rlcw
+python3 -m main
