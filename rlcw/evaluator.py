@@ -33,5 +33,8 @@ class Evaluator:
     def average_rewards_per_episode(self):
         return [np.average(episode) for episode in self.rewards_per_episode()]
 
+    def no_timesteps_per_episode(self):
+        return [episode.size for episode in self.rewards_per_episode()]
+
     def eval(self):
         return self.results

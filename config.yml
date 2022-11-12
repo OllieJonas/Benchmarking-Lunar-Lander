@@ -4,15 +4,15 @@ overall:
     verbose: false
     render: true
     save:
-      no_partitions: 5
+      no_episodes: 1
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 600
+    max: 5
   timesteps:
-    max: 200
+    max: 1000000
     start_training: 50
 agents:
   random:

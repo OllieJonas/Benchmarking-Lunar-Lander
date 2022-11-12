@@ -11,14 +11,13 @@ import rlcw.util as util
 LOGGER: logging.Logger
 
 
-def _make_env(should_record, max_episodes, no_partitions):
+def _make_env(should_record, episodes_to_save):
     env = gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() \
         else gym.make("LunarLander-v2", render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
-                                       episode_trigger=lambda x: x in _split_into_partitions(max_episodes,
-                                                                                             no_partitions))
+                                       episode_trigger=lambda x: x in episodes_to_save)
     return env
 
 
@@ -27,9 +26,8 @@ def enable_jupyter(value: bool = True):
 
 
 def main():
-    env, agent, config = setup()
-
-    orchestrator = Orchestrator(env=env, agent=agent, config=config)
+    env, agent, config, episodes_to_save = setup()
+    orchestrator = Orchestrator(env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
 
 
@@ -62,13 +60,15 @@ def setup():
 
     LOGGER.debug(f'Config: {config}')
 
-    env = _make_env(config["overall"]["output"]["save"]["recordings"],
-                    config["overall"]["episodes"]["max"],
-                    config["overall"]["output"]["save"]["no_partitions"])
+    max_episodes = config["overall"]["episodes"]["max"]
+    no_episodes_to_save = config["overall"]["output"]["save"]["no_episodes"]
+
+    save_partitions = _split_into_partitions(max_episodes, no_episodes_to_save)
+    env = _make_env(config["overall"]["output"]["save"]["recordings"], save_partitions)
 
     agent = get_agent(config["overall"]["agent_name"], env.action_space, config["agents"])
 
-    return env, agent, config
+    return env, agent, config, save_partitions
 
 
 def _make_dirs(config):

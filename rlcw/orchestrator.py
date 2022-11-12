@@ -12,10 +12,11 @@ from rlcw.agents.abstract_agent import AbstractAgent
 
 class Orchestrator:
 
-    def __init__(self, env, agent: AbstractAgent, config, seed: int = 42):
+    def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
         self.env = env
         self.agent = agent
         self.config = config
+        self.episodes_to_save = episodes_to_save
         self.seed = seed
 
         _save_cfg = config["overall"]["output"]["save"]
@@ -42,6 +43,7 @@ class Orchestrator:
 
     def run(self):
         self.runner = Runner(self.env, self.agent, self.seed,
+                             episodes_to_save=self.episodes_to_save,
                              should_render=self.should_render,
                              max_timesteps=self.max_timesteps,
                              max_episodes=self.max_episodes,
@@ -65,6 +67,7 @@ class Runner:
 
     def __init__(self, env, agent: AbstractAgent, seed: int,
                  should_render,
+                 episodes_to_save,
                  max_timesteps,
                  max_episodes,
                  start_training_timesteps):
@@ -74,9 +77,10 @@ class Runner:
         self.agent = agent
         self.seed = seed
 
-        self.max_episodes = max_episodes
-        self.max_timesteps = max_timesteps
+        self.episodes_to_save = episodes_to_save
         self.should_render = should_render
+        self.max_timesteps = max_timesteps
+        self.max_episodes = max_episodes
         self.start_training_timesteps = start_training_timesteps
 
         self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
@@ -119,10 +123,11 @@ class Runner:
                 self.agent.train(training_context)
 
             next_state = state
-            result_obj = Results.ResultObj(episode=curr_episode, timestep=t, state=state, reward=reward)
 
-            self.results.add(curr_episode, result_obj)
-            self.LOGGER.debug(result_obj)
+            if curr_episode in self.episodes_to_save:
+                result_obj = Results.ResultObj(episode=curr_episode, timestep=t, state=state, reward=reward)
+                self.results.add(curr_episode, result_obj)
+                self.LOGGER.debug(result_obj)
 
             if terminated:
                 curr_episode += 1
