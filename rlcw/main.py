@@ -12,7 +12,7 @@ LOGGER: logging.Logger
 
 
 def _make_env(should_record, episodes_to_save):
-    env = gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() \
+    env = gym.make("LunarLander-v2", render_mode="rgb_array") if util.is_using_jupyter() or should_record \
         else gym.make("LunarLander-v2", render_mode="human")
 
     if should_record:
@@ -53,6 +53,14 @@ def setup():
     config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
     _make_dirs(config)
 
+    # can't render in human mode and record at the same time
+    should_record = config["overall"]["output"]["save"]["recordings"]
+    should_render = config["overall"]["output"]["render"]
+
+    if should_render and should_record:
+        LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
+        should_record = False
+
     LOGGER = util.init_logger("Main")
 
     logger_level = logging.DEBUG if config["overall"]["output"]["verbose"] else logging.INFO
@@ -66,7 +74,7 @@ def setup():
     no_episodes_to_save = config["overall"]["output"]["save"]["no_episodes"]
 
     save_partitions = _split_into_partitions(max_episodes, no_episodes_to_save)
-    env = _make_env(config["overall"]["output"]["save"]["recordings"], save_partitions)
+    env = _make_env(should_record, save_partitions)
 
     agent = get_agent(config["overall"]["agent_name"], env.action_space, config["agents"])
 
