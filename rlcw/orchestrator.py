@@ -57,6 +57,7 @@ class Orchestrator:
 
     def eval(self):
         self.evaluator = Evaluator(self.results)
+        self.evaluator.eval()
 
     def _sync_seeds(self):
         np.random.seed(self.seed)

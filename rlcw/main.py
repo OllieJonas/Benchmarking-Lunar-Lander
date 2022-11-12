@@ -29,6 +29,7 @@ def main():
     env, agent, config, episodes_to_save = setup()
     orchestrator = Orchestrator(env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
+    orchestrator.eval()
 
 
 def get_agent(name: str, action_space, config) -> AbstractAgent:
