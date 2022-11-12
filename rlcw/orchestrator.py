@@ -134,7 +134,7 @@ class Runner:
             state = next_state
 
             if curr_episode in self.episodes_to_save:
-                result_obj = Results.ResultObj(episode=curr_episode, timestep=t, state=state, reward=reward)
+                result_obj = Results.Timestep(state=state, action=action, reward=reward)
                 self.results.add(curr_episode, result_obj)
                 self.LOGGER.debug(result_obj)
 
@@ -149,30 +149,47 @@ class Runner:
 
 
 class Results:
-    class ResultObj:
-        def __init__(self, episode, timestep, state, reward):
-            self.episode = episode
-            self.timestep = timestep
+    """
+    idk how this is going to interact with pytorch cuda parallel stuff so maybe we'll have to forget this? atm,
+    this is responsible for recording results.
+
+    """
+    class Timestep:
+        def __init__(self, state, action, reward):
             self.state = state
+            self.action = action
             self.reward = reward
 
         def __repr__(self):
-            return f'<t {self.timestep}: s: {self.state}, r: {self.reward}>'
+            return f'<s: {self.state}, a: {self.action}, r: {self.reward}>'
+
+        def clone(self):
+            return Results.Timestep(self.state, self.action, self.reward)
 
     def __init__(self, agent_name, date_time):
         self.agent_name = agent_name
         self.date_time = date_time
 
-        self.results = {}
+        self.timestep_buffer = []
+        self.curr_episode = 0
+
+        self.results = []
+
+        self.results_detailed = {}
 
     def __repr__(self):
         return self.results.__str__()
 
-    def add(self, episode: int, result: ResultObj):
-        if episode not in self.results:
-            self.results[episode] = []
+    def add(self, episode: int, timestep: Timestep, store_detailed: bool):
+        if episode == self.curr_episode:
+            self.timestep_buffer.append(timestep)
+        else:
+            if store_detailed:
+                self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
 
-        self.results[episode].append(result)
+            print(self.timestep_buffer)
+            # flush buffer
+            self.timestep_buffer = []
 
     def save_to_disk(self):
         file_name = f'{self.agent_name} - {self.date_time}'
