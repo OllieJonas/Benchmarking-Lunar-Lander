@@ -54,16 +54,18 @@ def setup():
     _make_dirs(config)
     
     config_overall = config["overall"]
+    config_output = config_overall["output"]
+
     LOGGER = util.init_logger("Main")
 
-    logger_level = logging.DEBUG if config_overall["output"]["verbose"] else logging.INFO
+    logger_level = logging.DEBUG if config_output["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
     util.set_logger_level(logger_level)
 
     # can't render in human mode and record at the same time
-    should_record = config_overall["output"]["save"]["recordings"]
-    should_render = config_overall["output"]["render"]
+    should_record = config_output["save"]["recordings"]
+    should_render = config_output["render"]
 
     if should_render and should_record:
         LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
@@ -72,7 +74,7 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     max_episodes = config_overall["episodes"]["max"]
-    no_episodes_to_save = config_overall["output"]["save"]["no_episodes"]
+    no_episodes_to_save = config_output["save"]["no_episodes"]
 
     env_name = config_overall["env_name"]
 
