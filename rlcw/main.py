@@ -33,9 +33,9 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, config) -> AbstractAgent:
+def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
     name = name.lower()
-    cfg = config[name] if name in config else None
+    cfg = agents_config[name] if name in agents_config else None
 
     if name == "random":
         return RandomAgent(action_space, cfg)
@@ -50,7 +50,7 @@ def is_using_jupyter():
 def setup():
     global LOGGER
 
-    config = _parse_config("../../config.yml" if util.is_using_jupyter() else "../config.yml")
+    config = _parse_config()
     _make_dirs(config)
     
     config_overall = config["overall"]
@@ -118,8 +118,8 @@ def _make_dirs(config):
         util.make_dir(recordings_path)
 
 
-def _parse_config(path="../config.yml"):
-    with open(path) as file:
+def _parse_config(name="config.yml"):
+    with open(f'{util.get_project_root_path()}{name}') as file:
         return yaml.safe_load(file)
 
 

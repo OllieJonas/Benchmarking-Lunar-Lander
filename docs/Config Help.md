@@ -1,14 +1,16 @@
 # The Configuration File
 In the root directory, there is a config.yml, which allows you to change certain things about it.
 
-_NOTE: The config.yml is included in the .gitignore to stop people from overwriting other people's settings. If you
-add something to the config, please ignore the .gitignore and commit it anyways._
 
-Below, there is a table of each thing in the config, and what it does:
+
+I've created a couple tables below organised by section, to make our lives easier
+
+## Overall
+
+Settings that are universal no matter what agent you're running.
 
 | Name           | Description                                                                                                                                                                                                                                                                                                   | Data Type | Notes                                                                                                                                            |
 |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Overall**    |                                                                                                                                                                                                                                                                                                               |           | Section                                                                                                                                          |
 | Agent_Name     | Specifies which agent (ie. algorithm) will be used                                                                                                                                                                                                                                                            | String    |                                                                                                                                                  |
 | Env_Name       | Specifies which environment to be used.                                                                                                                                                                                                                                                                       | String    |                                                                                                                                                  |
 | **Output**     |                                                                                                                                                                                                                                                                                                               |           | Section                                                                                                                                          |
@@ -25,4 +27,15 @@ Below, there is a table of each thing in the config, and what it does:
 | **Timesteps**  |                                                                                                                                                                                                                                                                                                               |           | Section                                                                                                                                          |
 | Max            | The total number of timesteps to iterate through                                                                                                                                                                                                                                                              | Integer   |                                                                                                                                                  |
 | Start_Training | When to start allowing the agent to train                                                                                                                                                                                                                                                                     | Integer   | \> Timesteps (Max)                                                                                                                               |
-| **Agents**     |                                                                                                                                                                                                                                                                                                               |           | Section                                                                                                                                          |
+
+## Agents
+
+Settings that are specific to each agent.
+
+_NOTE: The config.yml is included in the .gitignore to stop people from overwriting other people's settings. If you
+add something to the config, please ignore the .gitignore and commit it anyways._
+
+| Name       | Description                         | Data Type | Notes |
+|------------|-------------------------------------|-----------|-------|
+| **Random** | Selects actions completely randomly |           |       |
+| Foo        | Useless - just used as an example   | String    |       |

@@ -16,3 +16,6 @@ docker cp %CONTAINER_NAME%:%CONTAINER_BASE_PATH%/out %~dp0
 docker container stop rlcw
 docker container rm rlcw --force
 
+:: stops console from automatically exiting upon completion
+cmd -k
+

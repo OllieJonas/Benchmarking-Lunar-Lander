@@ -17,4 +17,6 @@ overall:
     start_training: 50
 agents:
   random:
+    foo: "bar"
+
 

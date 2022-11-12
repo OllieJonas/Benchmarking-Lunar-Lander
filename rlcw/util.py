@@ -1,9 +1,11 @@
 import logging
 import os
 import sys
+import copy
+
 from datetime import datetime
 
-CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
+CURR_DATE_TIME = None
 
 using_jupyter = False
 
@@ -24,11 +26,20 @@ def is_using_jupyter():
     return using_jupyter
 
 
+def get_project_root_path():
+    return f'{"/".join(copy.copy(sys.argv[0].split("/"))[:-2])}/'
+
+
 def get_output_root_path():
-    return f'{"../" if using_jupyter else ""}../out/'
+    return f'{get_project_root_path()}out/'
 
 
 def get_curr_session_output_path():
+    global CURR_DATE_TIME
+
+    if CURR_DATE_TIME is None:
+        CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
+
     return f'{get_output_root_path()}{CURR_DATE_TIME}/'
 
 
