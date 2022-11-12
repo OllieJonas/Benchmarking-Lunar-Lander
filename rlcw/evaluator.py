@@ -40,8 +40,8 @@ class Evaluator:
 
     def eval(self):
         self.LOGGER.debug(f'Raw: {self.results.results}')
-        self.LOGGER.info(f'Rewards (per Episode): {self.rewards_per_episode()}')
-        self.LOGGER.info(f'Rewards (ignoring Episodes): {self.rewards_ignoring_episodes()}')
+        self.LOGGER.debug(f'Rewards (per Episode): {self.rewards_per_episode()}')
+        self.LOGGER.debug(f'Rewards (ignoring Episodes): {self.rewards_ignoring_episodes()}')
         self.LOGGER.info(f'Cumulative Rewards (per Episode): {self.cumulative_rewards_per_episode()}')
         self.LOGGER.info(f'Average Rewards (per Episode): {self.average_rewards_per_episode()}')
         self.LOGGER.info(f'No Timesteps (per Episode): {self.no_timesteps_per_episode()}')
