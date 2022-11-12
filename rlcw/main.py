@@ -57,7 +57,7 @@ def setup():
     global LOGGER
 
     config = _parse_config()
-    
+
     config_overall = config["overall"]
     config_output = config_overall["output"]
 
@@ -85,11 +85,10 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     max_episodes = config_overall["episodes"]["max"]
-    no_episodes_to_save = config_output["save"]["no_episodes"]
 
     env_name = config_overall["env_name"]
 
-    save_partitions = _split_into_partitions(max_episodes, no_episodes_to_save)
+    save_partitions = _parse_episode_config_var(max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
     agent = get_agent(agent_name, env.action_space, config["agents"])
@@ -133,6 +132,11 @@ def _parse_config(name="config.yml"):
         return yaml.safe_load(file)
 
 
+def _parse_episode_config_var(max_episodes, inp):
+    return _split_into_partitions(max_episodes, inp) if type(inp) is int \
+        else list(map(lambda e: min(max_episodes - 1, e), inp))
+
+
 def _split_into_partitions(_max, partitions):
     """
     3 -> 0, 100, 199
@@ -140,7 +144,7 @@ def _split_into_partitions(_max, partitions):
     if partitions <= 0:
         raise ValueError('partitions can\'t be less than 0')
     else:
-        return tuple((min(_max - 1, i * _max // partitions) for i in range(partitions + 1)))
+        return list((min(_max - 1, i * _max // partitions) for i in range(partitions + 1)))
 
 
 if __name__ == "__main__":
