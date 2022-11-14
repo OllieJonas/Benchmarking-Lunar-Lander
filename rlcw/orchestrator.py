@@ -1,55 +1,121 @@
-import matplotlib
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 from IPython import display
 
-from rlcw.agents.abstract_agent import AbstractAgent
-from rlcw.util import init_logger
+from agents.abstract_agent import AbstractAgent
+from util import init_logger
+import util
+import evaluator as eval 
 
 
 class Orchestrator:
 
-    def __init__(self, env, agent: AbstractAgent, config, from_jupyter: bool = False, seed: int = 42):
+    def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
+        self.LOGGER = util.init_logger("Orchestrator")
+
         self.env = env
         self.agent = agent
         self.config = config
-        self.from_jupyter = from_jupyter
+        self.episodes_to_save = episodes_to_save
         self.seed = seed
 
+        _save_cfg = config["overall"]["output"]["save"]
+
+        # runner stuff
+        self.should_render = config["overall"]["output"]["render"]
+        self.should_save_raw = _save_cfg["raw"]
+
+        self.max_episodes = config["overall"]["episodes"]["max"]
+
+        self.max_timesteps = config["overall"]["timesteps"]["max"]
+        self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
+
         self.runner = None
-        self.eval = None
+        self.time_taken = 0.
+        self.results = None
+
+        # eval stuff
+        self.should_save_charts = _save_cfg["charts"]
+        self.should_save_csv = _save_cfg["csv"]
+
+        self.evaluator = None
+
+        self._sync_seeds()
 
     def run(self):
-        self.runner = Runner(self.env, self.agent, self.config, seed=self.seed)
-        self.runner.run(from_jupyter=self.from_jupyter)
+        self.runner = Runner(self.env, self.agent, self.seed,
+                             episodes_to_save=self.episodes_to_save,
+                             should_render=self.should_render,
+                             max_timesteps=self.max_timesteps,
+                             max_episodes=self.max_episodes,
+                             start_training_timesteps=self.start_training_timesteps)
+
+        self.LOGGER.info(f'Running agent {self.agent.name()} ...')
+        self.results = self.runner.run()
+        # self.time_taken = end - start
+        # self.LOGGER.info(f'Time Taken: {self.time_taken}')
+        self.env.close()
+
+        if self.should_save_raw:
+            self.results.save_to_disk()
 
     def eval(self):
-        pass
+        self.evaluator = eval.Evaluator(self.results, self.should_save_charts, self.should_save_csv,
+                                        agent_name=self.agent.name())
+        self.evaluator.eval()
+
+    def _sync_seeds(self):
+        np.random.seed(self.seed)
+        torch.random.manual_seed(self.seed)
 
 
 class Runner:
 
-    def __init__(self, env, agent: AbstractAgent, config, seed: int = 42):
-        self.LOGGER = init_logger("Runner")
+    def __init__(self, env, agent: AbstractAgent, seed: int,
+                 should_render,
+                 episodes_to_save,
+                 max_timesteps,
+                 max_episodes,
+                 start_training_timesteps):
+        self.LOGGER = util.init_logger("Runner")
+
         self.env = env
         self.agent = agent
-        self.config = config
         self.seed = seed
-        self.results = Results()
 
-    def run(self, from_jupyter: bool = False):
-        observation, info = self.env.reset()
+        self.episodes_to_save = episodes_to_save
+        self.should_render = should_render
+        self.max_timesteps = max_timesteps
+        self.max_episodes = max_episodes
+        self.start_training_timesteps = start_training_timesteps
+
+        self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
+
+    def run(self):
+        state, info = self.env.reset()
         training_context = []
 
+        curr_episode = 0
+
+        is_using_jupyter = util.is_using_jupyter()
+
         # display
-        image = plt.imshow(self.env.render()) if from_jupyter else None
-        for t in range(self.config["timesteps"]["total"]):
-            action = self.agent.get_action(observation)
-            next_observation, reward, terminated, truncated, info = self.env.step(action)
+        image = plt.imshow(self.env.render()) if is_using_jupyter else None
+
+        for t in range(self.max_timesteps):
+            if curr_episode > self.max_episodes:
+                break
+
+            action = self.agent.get_action(state)
+            next_state, reward, terminated, truncated, info = self.env.step(action)
 
             # render
-            if self.config["render"]:
-                if from_jupyter:
+            if self.should_render:
+                if is_using_jupyter:
                     image.set_data(self.env.render())
                     display.display(plt.gcf())
                     display.clear_output(wait=True)
@@ -57,49 +123,89 @@ class Runner:
                     self.env.render()
 
             training_context.append({
-                "curr_obsv": observation,
-                "next_obsv": next_observation,
+                "curr_state": state,
+                "next_state": next_state,
                 "reward": reward,
                 "action": action
             })
 
-            if t > self.config["timesteps"]["start_training"]:
+            if t > self.start_training_timesteps:
                 self.agent.train(training_context)
 
-            next_observation = observation
+            state = next_state
 
-            result_obj = Results.ResultObj(timestamp=t, observation=observation, reward=reward)
+            timestep_result = Results.Timestep(state=state, action=action, reward=reward)
+            summary = self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
 
-            self.results.add(result_obj)
-            self.LOGGER.debug(result_obj)
+            if summary is not None:
+                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
 
-            if terminated or truncated:
-                observation, info = self.env.reset()
+            self.LOGGER.debug(timestep_result)
 
-        self.env.close()
+            if terminated:
+                curr_episode += 1
+                state, info = self.env.reset()
 
+            if truncated:
+                state, info = self.env.reset()
 
-class Eval:
-
-    def __init__(self, results):
-        self.results = results
+        return self.results
 
 
 class Results:
-    class ResultObj:
-        def __init__(self, timestamp, observation, reward):
-            self.timestamp = timestamp
-            self.observation = observation
+    """
+    idk how this is going to interact with pytorch cuda parallel stuff so maybe we'll have to forget this? atm,
+    this is responsible for recording results.
+
+    """
+    class Timestep:
+        def __init__(self, state, action, reward):
+            self.state = state
+            self.action = action
             self.reward = reward
 
-        def __str__(self):
-            return f'Timestep {self.timestamp}: Observation: {self.observation}, Reward: {self.reward}'
+        def __repr__(self):
+            return f'<s: {self.state}, a: {self.action}, r: {self.reward}>'
 
-    def __init__(self):
-        self._results = []
+        def clone(self):
+            return Results.Timestep(self.state, self.action, self.reward)
 
-    def add(self, result: ResultObj):
-        self._results.append(result)
+    def __init__(self, agent_name, date_time):
+        self.agent_name = agent_name
+        self.date_time = date_time
 
-    def save(self, file_name):
-        pass
+        self.timestep_buffer = []
+        self.curr_episode = 0
+
+        self.results = []
+
+        self.results_detailed = {}
+
+    def __repr__(self):
+        return self.results.__str__()
+
+    def add(self, episode: int, timestep: Timestep, store_detailed: bool):
+        if episode == self.curr_episode:
+            self.timestep_buffer.append(timestep)
+            return None
+        else:
+            if store_detailed:
+                self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
+
+            self.curr_episode = episode
+
+            rewards = np.fromiter(map(lambda t: t.reward, self.timestep_buffer), dtype=float)
+            cumulative = np.sum(rewards)
+            avg = np.average(rewards)
+            no_timesteps = rewards.size
+
+            episode_summary = (cumulative, avg, no_timesteps)
+            self.results.append(episode_summary)
+            # flush buffer
+            self.timestep_buffer = []
+
+            return episode_summary
+
+    def save_to_disk(self):
+        file_name = f'{self.agent_name} - {self.date_time}'
+        util.save_file("results", file_name, self.results.__str__())

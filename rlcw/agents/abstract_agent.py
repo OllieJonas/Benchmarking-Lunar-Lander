@@ -5,13 +5,15 @@ from typing import NoReturn, List
 
 class AbstractAgent:
 
-    def __init__(self, action_space):
+    def __init__(self, logger, action_space, config):
+        self.logger = logger
         self.action_space = action_space
+        self.config = config
 
-    def name(self):
+    def name(self) -> str:
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
-    def get_action(self, observation):
+    def get_action(self, state):
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
     def train(self, training_context: List) -> NoReturn:

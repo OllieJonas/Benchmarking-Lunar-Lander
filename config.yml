@@ -1,6 +1,22 @@
-agent: "random"
-verbose: false
-render: true
-timesteps:
-  total: 200
-  start_training: 50
+overall:
+  agent_name: "random"
+  env_name: "LunarLander-v2"
+  output:
+    verbose: false
+    render: false
+    save:
+      episodes: 5
+      csv: true
+      charts: true
+      raw: false
+      recordings: true
+  episodes:
+    max: 5
+  timesteps:
+    max: 1000000
+    start_training: 50
+agents:
+  random:
+    foo: "bar"
+
+
