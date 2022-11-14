@@ -13,7 +13,7 @@ class AbstractAgent:
     def name(self) -> str:
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
-    def get_action(self, observation):
+    def get_action(self, state):
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
     def train(self, training_context: List) -> NoReturn:

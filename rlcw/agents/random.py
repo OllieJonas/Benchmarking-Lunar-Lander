@@ -15,7 +15,7 @@ class RandomAgent(AbstractAgent):
     def name(self):
         return "Random"
 
-    def get_action(self, observation):
+    def get_action(self, state):
         return random.choice(range(self.action_space.n))
 
     def train(self, training_context: List) -> NoReturn:
