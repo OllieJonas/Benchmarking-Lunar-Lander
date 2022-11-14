@@ -5,7 +5,7 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: [0, 3, 105]
+      episodes: 5
       csv: true
       charts: true
       raw: false

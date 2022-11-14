@@ -2,7 +2,6 @@ import random
 
 from typing import NoReturn, List
 
-import util
 from rlcw.agents.abstract_agent import AbstractAgent
 
 
