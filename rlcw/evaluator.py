@@ -5,12 +5,18 @@ import matplotlib.ticker as ticker
 import rlcw.util as util
 
 
-def save_plot_as_image(name, title, data, x_label, y_label):
+def _get_csv_file_path(name):
+    return f'{util.get_curr_session_output_path()}results/csv/{name}' \
+           f'{"" if name.endswith(".csv") else ".csv"}'
+
+
+def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=True):
     file_name = f'{util.get_curr_session_output_path()}results/png/{name}{"" if name.endswith(".png") else ".png"}'
     plt.plot(data)
 
-    plt.ticklabel_format(style='plain', axis='x', useOffset=False)
-    plt.gca().xaxis.set_major_locator(ticker.MultipleLocator(1))
+    if incremental_ticker:
+        plt.ticklabel_format(style='plain', axis='x', useOffset=False)
+        plt.gca().xaxis.set_major_locator(ticker.MultipleLocator(1))
 
     plt.title(title)
     plt.xlabel(x_label)
@@ -18,16 +24,6 @@ def save_plot_as_image(name, title, data, x_label, y_label):
 
     plt.savefig(file_name)
     plt.close()
-
-
-# noinspection PyTypeChecker
-def save_as_csv(name, cumulative_rewards, average_rewards, no_timesteps):
-    file_path = f'{util.get_curr_session_output_path()}results/csv/{name}{"" if name.endswith(".csv") else ".csv"}'
-
-    cumulative_rewards = ["Cumulative Rewards"] + cumulative_rewards
-    average_rewards = ["Average Rewards"] + average_rewards
-    no_timesteps = ["No Timesteps"] + no_timesteps
-    np.savetxt(file_path, [_ for _ in zip(cumulative_rewards, average_rewards, no_timesteps)], delimiter=', ', fmt="%s")
 
 
 class Evaluator:
@@ -63,7 +59,37 @@ class Evaluator:
                                no_timesteps, "Episode", "No Timesteps")
 
         if self.should_save_csv:
-            save_as_csv("results.csv", cumulative_rewards, average_rewards, no_timesteps)
+            name = "results.csv"
+
+            cumulative_rewards = ["Cumulative Rewards"] + cumulative_rewards
+            average_rewards = ["Average Rewards"] + average_rewards
+            no_timesteps = ["No Timesteps"] + no_timesteps
+
+            np.savetxt(_get_csv_file_path("results.csv"),
+                       [_ for _ in zip(cumulative_rewards, average_rewards, no_timesteps)],
+                       delimiter=', ',
+                       fmt="%s")
 
     def _eval_detailed(self):
-        pass
+        for k, v in self.results.results_detailed.items():
+            if self.should_save_charts:
+                save_plot_as_image(f'rewards_ep_{str(k)}',
+                                   f'Reward over Timesteps (Episode {str(k)})',
+                                   [t.reward for t in v],
+                                   "Timesteps",
+                                   "Reward",
+                                   incremental_ticker=False)
+
+            if self.should_save_csv:
+                name = f"results_ep_{str(k)}.csv"
+
+                timesteps = ["Timestep"] + list(range(len(v)))
+                states = ["State"] + [[s for s in t.state] for t in v]
+                actions = ["Action"] + [t.action for t in v]
+                rewards = ["Reward"] + [t.reward for t in v]
+
+                np.savetxt(_get_csv_file_path(name),
+                           [_ for _ in zip(timesteps, states, actions, rewards)],
+                           delimiter=', ',
+                           fmt="%s")
+

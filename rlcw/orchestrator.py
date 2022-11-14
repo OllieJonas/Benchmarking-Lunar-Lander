@@ -135,7 +135,11 @@ class Runner:
             state = next_state
 
             timestep_result = Results.Timestep(state=state, action=action, reward=reward)
-            self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+            summary = self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+
+            if summary is not None:
+                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
+
             self.LOGGER.debug(timestep_result)
 
             if terminated:
@@ -183,6 +187,7 @@ class Results:
     def add(self, episode: int, timestep: Timestep, store_detailed: bool):
         if episode == self.curr_episode:
             self.timestep_buffer.append(timestep)
+            return None
         else:
             if store_detailed:
                 self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
@@ -198,6 +203,8 @@ class Results:
             self.results.append(episode_summary)
             # flush buffer
             self.timestep_buffer = []
+
+            return episode_summary
 
     def save_to_disk(self):
         file_name = f'{self.agent_name} - {self.date_time}'
