@@ -2,7 +2,7 @@ import random
 
 from typing import NoReturn, List
 
-from rlcw.agents.abstract_agent import AbstractAgent
+from agents.abstract_agent import AbstractAgent
 
 
 class RandomAgent(AbstractAgent):

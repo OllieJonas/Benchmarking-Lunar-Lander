@@ -6,10 +6,8 @@ import torch
 
 from IPython import display
 
-import rlcw.util as util
-
-import rlcw.evaluator as eval
-from rlcw.agents.abstract_agent import AbstractAgent
+from agents.abstract_agent import AbstractAgent
+from util import init_logger
 
 
 class Orchestrator:
