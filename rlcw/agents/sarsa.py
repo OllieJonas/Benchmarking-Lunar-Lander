@@ -9,14 +9,15 @@ from agents.abstract_agent import AbstractAgent
 
 class SarsaAgent(AbstractAgent):
 
-    def __init__(self, action_space):
+    def __init__(self, logger, action_space, config):
         self.action_space = action_space
         self.Q = self._make_q(np.zeros(8))
         self.alpha = 0.1 
         self.gamma = 0.9 
 
         
-        super().__init__(action_space)
+        super().__init__(logger, action_space, config)
+
 
     def name(self):
         return "sarsa"
@@ -50,8 +51,8 @@ class SarsaAgent(AbstractAgent):
 
     def train(self, training_context: List) -> NoReturn:
         #import pdb; pdb.set_trace()
-        state = training_context[0]["curr_obsv"]
-        state2 = training_context[0]["next_obsv"]
+        state = training_context[0]["curr_state"]
+        state2 = training_context[0]["next_state"]
         action = training_context[0]["action"]
         reward = training_context[0]["reward"]
 

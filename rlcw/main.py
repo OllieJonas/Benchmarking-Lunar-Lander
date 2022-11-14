@@ -47,6 +47,8 @@ def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
 
     if name == "random":
         return RandomAgent(logger, action_space, cfg)
+    elif name == "sarsa":
+        return SarsaAgent(logger, action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -130,6 +132,7 @@ def _make_dirs(config, agent_name):
 
 
 def _parse_config(name="config.yml"):
+    
     with open(f'{util.get_project_root_path()}{name}') as file:
         return yaml.safe_load(file)
 

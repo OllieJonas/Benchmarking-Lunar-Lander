@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-import rlcw.util as util
+import util as util
 
 
 def _get_csv_file_path(name):
