@@ -1,11 +1,11 @@
 overall:
-  agent_name: "random"
+  agent_name: "sarsa"
   env_name: "LunarLander-v2"
   output:
     verbose: false
-    render: false
+    render: true
     save:
-      episodes: 5
+      episodes: 20
       csv: true
       charts: true
       raw: false
@@ -18,5 +18,3 @@ overall:
 agents:
   random:
     foo: "bar"
-
-
