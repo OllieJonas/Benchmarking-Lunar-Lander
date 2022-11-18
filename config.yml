@@ -1,5 +1,5 @@
 overall:
-  agent_name: "sarsa"
+  agent_name: "ddpg"
   env_name: "LunarLander-v2"
   output:
     verbose: false
@@ -9,11 +9,11 @@ overall:
       csv: true
       charts: true
       raw: false
-      recordings: true
+      recordings: false
   episodes:
     max: 5
   timesteps:
-    max: 1000000
+    max: 1000
     start_training: 50
 agents:
   random:
