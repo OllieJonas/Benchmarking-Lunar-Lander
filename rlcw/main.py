@@ -7,6 +7,7 @@ import util
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
+from agents.ddpg import DdpgAgent
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
 
@@ -49,6 +50,8 @@ def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
         return RandomAgent(logger, action_space, cfg)
     elif name == "sarsa":
         return SarsaAgent(logger, action_space, cfg)
+    elif name == "ddpg":
+        return DdpgAgent(logger, action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
