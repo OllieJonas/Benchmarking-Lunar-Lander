@@ -3,17 +3,17 @@ overall:
   env_name: "LunarLander-v2"
   output:
     verbose: false
-    render: true
+    render: false
     save:
-      episodes: 20
+      episodes: 1000
       csv: true
       charts: true
       raw: false
-      recordings: false
+      recordings: true
   episodes:
-    max: 5
-  timesteps:
     max: 1000
+  timesteps:
+    max: 100000
     start_training: 50
 agents:
   random:
