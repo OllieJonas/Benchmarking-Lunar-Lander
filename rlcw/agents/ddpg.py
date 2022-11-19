@@ -14,17 +14,16 @@ class DdpgAgent(AbstractAgent):
 
     def __init__(self, logger, action_space, config):
         self.action_space = action_space
-        self.Q = self._make_q(np.zeros(8))
-        self.alpha = config.alpha
-        self.beta = config.beta
-        self.gamma = config.gamma
-        self.tau = config.tau
-        self.batch_size = config.batch_size
-        self.input_dims = config.input_dims
-        self.layer1_size = config.layer1_size
-        self.layer2_size = config.layer2_size
-        self.n_actions = config.n_actions
-        self.max_size = config.max_size
+        self.alpha = config['alpha']
+        self.beta = config['beta']
+        self.gamma = config['gamma']
+        self.tau = config['tau']
+        self.batch_size = config['batch_size']
+        self.input_dims = config['input_dims']
+        self.layer1_size = config['layer1_size']
+        self.layer2_size = config['layer2_size']
+        self.n_actions = config['n_actions']
+        self.max_size = config['max_size']
 
         self.memory = ReplayBuffer(
             self.max_size, self.input_dims, self.n_actions)
