@@ -1,4 +1,5 @@
 import random
+import os
 import numpy as np
 from typing import NoReturn, List
 from agents.abstract_agent import AbstractAgent
@@ -120,3 +121,24 @@ class CriticNetwork(nn.Module):
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
         self.to(self.device)
+
+    def forward(self, state, action):
+        state_value = self.fc1(state)
+        state_value = self.bn1(state_value)
+        state_value = F.relu(state_value)
+        state_value = self.fc2(state_value)
+        state_value = self.bn2(state_value)
+
+        action_value = F.relu(self.action_value(action))
+        state_action_value = F.relu(T.add(state_value, action_value))
+        state_action_value = self.q(state_action_value)
+
+        return state_action_value
+
+    def save_checkpoint(self):
+        print("... saving checkpoint ...")
+        T.save(self.state_dict(), self.checkpoint_file)
+
+    def load_checkpoint(self):
+        print("... loading checkpoint ...")
+        self.load_state_dict(T.load(self.checkpoint_file))
