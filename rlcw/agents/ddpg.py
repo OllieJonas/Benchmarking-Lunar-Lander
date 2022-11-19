@@ -9,6 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+# Code **inspired** by
+# https://www.youtube.com/watch?v=6Yd5WnYls_Y
+
 
 class DdpgAgent(AbstractAgent):
 
@@ -57,11 +60,11 @@ class DdpgAgent(AbstractAgent):
     # def train(self, training_context: List) -> NoReturn:
     #    return super().train(training_context)
 
-    def choose_action(self, observation):
+    def get_action(self, state):
         self.actor.eval()
-        observation = T.tensor(
-            observation, dtype=T.float).to(self.actor.device)
-        mu = self.actor.forward(observation).to(self.actor.device)
+        state = T.tensor(
+            state, dtype=T.float).to(self.actor.device)
+        mu = self.actor.forward(state).to(self.actor.device)
         mu_prime = mu + T.tensor(self.noise(),
                                  dtype=T.float).to(self.actor.device)
         self.actor.train()
@@ -70,7 +73,7 @@ class DdpgAgent(AbstractAgent):
     def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
 
-    def learn(self):
+    def train(self):
         if self.memory.mem_cntr < self.batch_size:
             return
         state, action, reward, new_state, done = \
@@ -182,9 +185,6 @@ class DdpgAgent(AbstractAgent):
                 original_critic_dict[param], current_critic_dict[param]))
         input()
 
-# Code below from
-# https://www.youtube.com/watch?v=6Yd5WnYls_Y
-
 
 class ActionNoise(object):
     def __init__(self, mu, sigma=0.15, theta=0.2, dt=1e-2, x0=None):
@@ -255,7 +255,7 @@ class CriticNetwork(nn.Module):
         T.nn.init.uniform_(self.fc1.bias.data, -f1, f1)
         self.bn1 = nn.LayerNorm(self.fc1_dims)
 
-        self.fc2 = nn.Linear(*self.fc1_dims, self.fc2_dims)
+        self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         f2 = 1 / np.sqrt(self.fc2.weight.data.size()[0])
         T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
         T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
