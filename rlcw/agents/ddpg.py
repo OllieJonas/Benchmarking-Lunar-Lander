@@ -24,24 +24,26 @@ class DdpgAgent(AbstractAgent):
         self.layer1_size = config.layer1_size
         self.layer2_size = config.layer2_size
         self.n_actions = config.n_actions
+        self.max_size = config.max_size
 
-        self.memory = ReplayBuffer(max_size, input_dims, n_actions)
+        self.memory = ReplayBuffer(
+            self.max_size, self.input_dims, self.n_actions)
 
-        self.actor = ActorNetwork(alpha, input_dims, layer1_size,
-                                  layer2_size, n_actions=n_actions,
+        self.actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
+                                  self.layer2_size, n_actions=self.n_actions,
                                   name='Actor')
-        self.critic = CriticNetwork(beta, input_dims, layer1_size,
-                                    layer2_size, n_actions=n_actions,
+        self.critic = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
+                                    self.layer2_size, n_actions=self.n_actions,
                                     name='Critic')
 
-        self.target_actor = ActorNetwork(alpha, input_dims, layer1_size,
-                                         layer2_size, n_actions=n_actions,
+        self.target_actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
+                                         self.layer2_size, n_actions=self.n_actions,
                                          name='TargetActor')
-        self.target_critic = CriticNetwork(beta, input_dims, layer1_size,
-                                           layer2_size, n_actions=n_actions,
+        self.target_critic = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
+                                           self.layer2_size, n_actions=self.n_actions,
                                            name='TargetCritic')
 
-        self.noise = OUActionNoise(mu=np.zeros(n_actions))
+        self.noise = ActionNoise(mu=np.zeros(self.n_actions))
 
         self.update_network_parameters(tau=1)
 
@@ -49,12 +51,12 @@ class DdpgAgent(AbstractAgent):
         return "ddpg"
 
     # returns the action for agent to do at beginning of each time-step
-    def get_action(self, state):
-        return super().get_action(state)
+    # def get_action(self, state):
+    #    return super().get_action(state)
 
     # called when time-step to start training is reached
-    def train(self, training_context: List) -> NoReturn:
-        return super().train(training_context)
+    # def train(self, training_context: List) -> NoReturn:
+    #    return super().train(training_context)
 
     def choose_action(self, observation):
         self.actor.eval()

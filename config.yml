@@ -19,4 +19,13 @@ agents:
   random:
     foo: "bar"
   ddpg:
+    alpha: 0.000025
+    beta: 0.00025
     gamma: 0.99
+    tau: 0.001
+    batch_size: 64
+    input_dims: [8]
+    layer1_size: 400
+    layer2_size: 300
+    n_actions: 2
+    max_size: 1000000

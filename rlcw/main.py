@@ -31,7 +31,8 @@ def enable_jupyter(value: bool = True):
 def main():
     env, agent, config, episodes_to_save = setup()
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
-    orchestrator = Orchestrator(env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
+    orchestrator = Orchestrator(
+        env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
     orchestrator.eval()
 
@@ -86,7 +87,8 @@ def setup():
     should_render = config_output["render"]
 
     if should_render and should_record:
-        LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
+        LOGGER.warning(
+            "Can't render and record at the same time! Disabling recording ...")
         should_record = False
 
     LOGGER.debug(f'Config: {config}')
@@ -95,7 +97,8 @@ def setup():
 
     env_name = config_overall["env_name"]
 
-    save_partitions = _parse_episode_config_var(max_episodes, config_output["save"]["episodes"])
+    save_partitions = _parse_episode_config_var(
+        max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
     agent = get_agent(agent_name, env.action_space, config["agents"])
@@ -135,7 +138,7 @@ def _make_dirs(config, agent_name):
 
 
 def _parse_config(name="config.yml"):
-    
+
     with open(f'{util.get_project_root_path()}{name}') as file:
         return yaml.safe_load(file)
 
