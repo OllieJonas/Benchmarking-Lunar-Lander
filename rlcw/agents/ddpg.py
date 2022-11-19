@@ -68,7 +68,10 @@ class DdpgAgent(AbstractAgent):
         mu_prime = mu + T.tensor(self.noise(),
                                  dtype=T.float).to(self.actor.device)
         self.actor.train()
-        return mu_prime.cpu().detach().numpy()
+        action = mu_prime.cpu().detach().numpy()
+        print(action)
+        print(action.dtype)
+        return action
 
     def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
@@ -205,6 +208,10 @@ class ActionNoise(object):
     def reset(self):
         self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(
             self.mu)
+
+    def __repr__(self):
+        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(
+            self.mu, self.sigma)
 
 
 class ReplayBuffer(object):
