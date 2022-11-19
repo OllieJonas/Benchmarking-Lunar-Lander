@@ -8,8 +8,6 @@ import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from ddpg_models import *
-from ddpg_utils import *
 
 
 class DdpgAgent(AbstractAgent):
@@ -17,17 +15,17 @@ class DdpgAgent(AbstractAgent):
     def __init__(self, logger, action_space, config):
         self.action_space = action_space
         self.Q = self._make_q(np.zeros(8))
-        self.alpha = 0.1
-        self.gamma = 0.9
+        self.alpha = config.alpha
+        self.beta = config.beta
+        self.gamma = config.gamma
+        self.tau = config.tau
+        self.batch_size = config.batch_size
+        self.input_dims = config.input_dims
+        self.layer1_size = config.layer1_size
+        self.layer2_size = config.layer2_size
+        self.n_actions = config.n_actions
 
-        super().__init__(logger, action_space, config)
-
-        self.num_states = action_space.shape[0]
-
-        self.gamma = gamma
-        self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
-        self.batch_size = batch_size
 
         self.actor = ActorNetwork(alpha, input_dims, layer1_size,
                                   layer2_size, n_actions=n_actions,
@@ -58,7 +56,7 @@ class DdpgAgent(AbstractAgent):
     def train(self, training_context: List) -> NoReturn:
         return super().train(training_context)
 
-        def choose_action(self, observation):
+    def choose_action(self, observation):
         self.actor.eval()
         observation = T.tensor(
             observation, dtype=T.float).to(self.actor.device)

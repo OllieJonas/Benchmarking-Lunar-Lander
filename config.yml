@@ -18,3 +18,5 @@ overall:
 agents:
   random:
     foo: "bar"
+  ddpg:
+    gamma: 0.99
