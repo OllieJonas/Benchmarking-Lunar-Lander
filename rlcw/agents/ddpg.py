@@ -242,7 +242,7 @@ class ReplayBuffer(object):
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name,
                  chkpt_dir='tmp/ddpg'):
-        super(CriticNetwork, self).__init()
+        super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
@@ -317,8 +317,8 @@ class ActorNetwork(nn.Module):
 
         f3 = 0.003
         self.mu = nn.Linear(self.fc2_dims, self.n_actions)
-        T.nn.init.uniform_(self.fc3.weight.data, -f3, f3)
-        T.nn.init.uniform_(self.fc3.bias.data, -f3, f3)
+        T.nn.init.uniform_(self.mu.weight.data, -f3, f3)
+        T.nn.init.uniform_(self.mu.bias.data, -f3, f3)
 
         self.optimser = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
