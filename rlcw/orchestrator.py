@@ -127,6 +127,7 @@ class Runner:
                 "next_state": next_state,
                 "reward": reward,
                 "action": action,
+                "terminated": terminated
             })
 
             if t > self.start_training_timesteps:
