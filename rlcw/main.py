@@ -1,6 +1,7 @@
 import logging
 
 import gym
+import torch
 import yaml
 import util
 
@@ -88,6 +89,11 @@ def setup():
 
     LOGGER.debug(f'Config: {config}')
 
+    if not torch.cuda.is_available():
+        LOGGER.warning("CUDA is not available for Torch - Please check your installation!")
+    else:
+        LOGGER.info("CUDA is enabled!")
+
     max_episodes = config_overall["episodes"]["max"]
 
     env_name = config_overall["env_name"]
@@ -132,7 +138,6 @@ def _make_dirs(config, agent_name):
 
 
 def _parse_config(name="config.yml"):
-    
     with open(f'{util.get_project_root_path()}{name}') as file:
         return yaml.safe_load(file)
 

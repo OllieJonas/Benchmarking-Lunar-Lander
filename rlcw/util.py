@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import copy
+import torch
 
 from datetime import datetime
 
@@ -38,6 +39,11 @@ def get_curr_session_output_path():
 def save_file(directory, file_name, contents):
     with open(f'{get_curr_session_output_path()}/{directory}/{file_name}', 'w') as f:
         f.write(contents)
+
+
+def get_torch_device():
+    print(torch.cuda.is_available())
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def is_using_jupyter():

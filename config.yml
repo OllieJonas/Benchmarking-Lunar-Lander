@@ -1,11 +1,11 @@
 overall:
-  agent_name: "random"
+  agent_name: "sarsa"
   env_name: "LunarLander-v2"
   output:
     verbose: false
     render: false
     save:
-      episodes: 5
+      episodes: []
       csv: true
       charts: true
       raw: false
@@ -13,7 +13,7 @@ overall:
   episodes:
     max: 5
   timesteps:
-    max: 1000000
+    max: 1000000000000000
     start_training: 50
 agents:
   random:
