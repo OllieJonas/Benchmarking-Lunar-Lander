@@ -19,5 +19,7 @@ overall:
 agents:
   random:
     foo: "bar"
+  sac:
+    foo: "bar"
 
 
