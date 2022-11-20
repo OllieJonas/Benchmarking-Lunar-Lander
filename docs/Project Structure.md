@@ -60,7 +60,7 @@ I think the rest is pretty self-explanatory.
 _Please note, if you're using Docker, the run.bat script will copy it out of the container by default, 
 so this should still appear._
 
-#### rlcw
+##### rlcw
 
 This is our source code. Please write code in here :) I'll write a brief description of what each thing contains.
 
@@ -68,7 +68,7 @@ This is our source code. Please write code in here :) I'll write a brief descrip
 
 Contains the abstract template of an agent, as well as any implementations. Please put your agents in here!
 
-##### aotebooks
+##### notebooks
 
 Simply for Docker and Jupyter as an experiment for rendering using Docker - don't worry about it too much.
 
@@ -76,7 +76,7 @@ Simply for Docker and Jupyter as an experiment for rendering using Docker - don'
 
 Any unit tests we want to write should go in here.
 
-### scripts
+##### scripts
 
 This just contains the entrypoint for the Docker image - please don't touch anything in there unless you know what
 you're doing!
