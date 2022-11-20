@@ -37,7 +37,7 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -52,7 +52,7 @@ def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
     elif name == "sarsa":
         return SarsaAgent(logger, action_space, cfg)
     elif name == "sac":
-        return SoftActorCritic(logger, action_space, cfg)
+        return SoftActorCritic(logger, action_space, observation_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -104,7 +104,7 @@ def setup():
     save_partitions = _parse_episode_config_var(max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(agent_name, env.action_space, config["agents"])
+    agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
 
     return env, agent, config, save_partitions
 

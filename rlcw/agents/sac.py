@@ -44,21 +44,24 @@ class ValueNetwork(nn.Module):
 class SoftQNetwork(nn.Module):
 
     def __init__(self, theta):
-        super().__init__()
+        super(SoftQNetwork, self).__init__()
         self.theta = theta
 
 
 class PolicyNetwork(nn.Module):
     def __init__(self, tau):
-        super().__init__()
+        super(PolicyNetwork, self).__init__()
         self.tau = tau
 
 
 class SoftActorCritic(AbstractAgent):
 
-    def __init__(self, logger, action_space, config):
+    def __init__(self, logger, action_space, observation_space, config):
         super().__init__(logger, action_space, config)
         self.logger.info(f'SAC Config: {config}')
+
+        self.observation_space = observation_space
+        self.state_size = observation_space.shape[0]
         self.no_updates = 10
         self.sample_size = 10
 
@@ -68,8 +71,12 @@ class SoftActorCritic(AbstractAgent):
 
         self.no_hidden_layers = config["no_hidden_layers"]
         self.hidden_layer_size = config["hidden_layer_size"]
+
         # networks
-        value_network = ValueNetwork(psi=0.01, no_layers=self.no_hidden_layers).to(DEVICE)
+        actor_network = ValueNetwork(psi=0.01,
+                                     state_p=self.state_size,
+                                     hidden_p=self.hidden_layer_size,
+                                     no_layers=self.no_hidden_layers).to(DEVICE)
 
     def name(self) -> str:
         return "SAC"

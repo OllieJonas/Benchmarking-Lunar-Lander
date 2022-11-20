@@ -100,6 +100,8 @@ class Runner:
         state, info = self.env.reset()
         training_context = ReplayBuffer(self.training_ctx_capacity)
 
+        print(self.env.observation_space)
+
         curr_episode = 0
 
         is_using_jupyter = util.is_using_jupyter()
