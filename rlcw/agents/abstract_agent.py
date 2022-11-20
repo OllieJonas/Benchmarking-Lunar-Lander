@@ -1,6 +1,6 @@
-import gym
+from typing import NoReturn
 
-from typing import NoReturn, List
+from rlcw.replay_buffer import ReplayBuffer
 
 
 class AbstractAgent:
@@ -16,5 +16,5 @@ class AbstractAgent:
     def get_action(self, state):
         raise NotImplementedError("This hasn't been implemented yet! :(")
 
-    def train(self, training_context: List) -> NoReturn:
+    def train(self, training_context: ReplayBuffer) -> NoReturn:
         raise NotImplementedError("This hasn't been implemented yet! :(")

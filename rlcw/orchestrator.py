@@ -122,11 +122,11 @@ class Runner:
                 else:
                     self.env.render()
 
-            training_context.append({
+            training_context.add({
                 "curr_state": state,
                 "next_state": next_state,
                 "reward": reward,
-                "action": action
+                "action": action,
             })
 
             if t > self.start_training_timesteps:
