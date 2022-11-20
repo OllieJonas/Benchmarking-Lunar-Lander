@@ -58,7 +58,6 @@ def load_torch_nn(net, file_name):
 
 
 def get_torch_device():
-    print(torch.cuda.is_available())
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

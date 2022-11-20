@@ -1,5 +1,5 @@
 overall:
-  agent_name: "random"
+  agent_name: "sac"
   env_name: "LunarLander-v2"
   context_capacity: 64
   output:
@@ -12,7 +12,7 @@ overall:
       raw: false
       recordings: true
   episodes:
-    max: 2
+    max: 10
   timesteps:
     max: 1000000000000000
     start_training: 50
@@ -20,7 +20,8 @@ agents:
   random:
     foo: "bar"
   sac:
+    learning_rate: 0.0001
     no_hidden_layers: 1
-    hidden_layer_size: 128
+    no_hidden_neurons: 256
 
 
