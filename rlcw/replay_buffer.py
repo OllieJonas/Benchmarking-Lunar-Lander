@@ -18,9 +18,6 @@ class ReplayBuffer(object):
     def random_sample(self, sample_size):
         return np.random.choice(self.buffer, sample_size)
 
-    def _shift(self):
-        np.roll(self.buffer, -1)
-
     def __getitem__(self, item):
         return self.buffer[item]
 
