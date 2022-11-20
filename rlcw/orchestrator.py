@@ -98,7 +98,7 @@ class Runner:
 
     def run(self):
         state, info = self.env.reset()
-        training_context = ReplayBuffer()
+        training_context = ReplayBuffer(self.training_ctx_capacity)
 
         curr_episode = 0
 
