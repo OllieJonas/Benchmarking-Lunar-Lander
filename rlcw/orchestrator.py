@@ -50,7 +50,8 @@ class Orchestrator:
                              should_render=self.should_render,
                              max_timesteps=self.max_timesteps,
                              max_episodes=self.max_episodes,
-                             start_training_timesteps=self.start_training_timesteps)
+                             start_training_timesteps=self.start_training_timesteps,
+                             training_ctx_capacity=self.training_ctx_capacity)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
         self.results = self.runner.run()
