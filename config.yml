@@ -1,6 +1,7 @@
 overall:
   agent_name: "sarsa"
   env_name: "LunarLander-v2"
+  context_capacity: 64
   output:
     verbose: false
     render: false

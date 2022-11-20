@@ -1,15 +1,12 @@
-import time
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-
 from IPython import display
 
-from agents.abstract_agent import AbstractAgent
-from util import init_logger
+import evaluator as eval
 import util
-import evaluator as eval 
+from agents.abstract_agent import AbstractAgent
+from replay_buffer import ReplayBuffer
 
 
 class Orchestrator:
@@ -33,6 +30,7 @@ class Orchestrator:
 
         self.max_timesteps = config["overall"]["timesteps"]["max"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
+        self.training_ctx_capacity = config["overall"]["context_capacity"]
 
         self.runner = None
         self.time_taken = 0.
@@ -80,7 +78,8 @@ class Runner:
                  episodes_to_save,
                  max_timesteps,
                  max_episodes,
-                 start_training_timesteps):
+                 start_training_timesteps,
+                 training_ctx_capacity):
         self.LOGGER = util.init_logger("Runner")
 
         self.env = env
@@ -92,12 +91,13 @@ class Runner:
         self.max_timesteps = max_timesteps
         self.max_episodes = max_episodes
         self.start_training_timesteps = start_training_timesteps
+        self.training_ctx_capacity = training_ctx_capacity
 
         self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
 
     def run(self):
         state, info = self.env.reset()
-        training_context = []
+        training_context = ReplayBuffer()
 
         curr_episode = 0
 
