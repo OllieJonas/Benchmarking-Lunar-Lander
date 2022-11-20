@@ -3,7 +3,7 @@ overall:
   env_name: "LunarLander-v2"
   context_capacity: 64
   output:
-    verbose: false
+    verbose: true
     render: false
     save:
       episodes: []
@@ -12,7 +12,7 @@ overall:
       raw: false
       recordings: true
   episodes:
-    max: 5
+    max: 2
   timesteps:
     max: 1000000000000000
     start_training: 50
@@ -20,6 +20,7 @@ agents:
   random:
     foo: "bar"
   sac:
-    foo: "bar"
+    no_hidden_layers: 1
+    hidden_layer_size: 128
 
 

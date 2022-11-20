@@ -142,7 +142,7 @@ class Runner:
             if summary is not None:
                 self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
 
-            self.LOGGER.debug(timestep_result)
+            # self.LOGGER.debug(timestep_result)
 
             if terminated:
                 curr_episode += 1
