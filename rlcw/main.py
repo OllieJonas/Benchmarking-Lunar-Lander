@@ -1,12 +1,14 @@
 import logging
 
 import gym
+import torch
 import yaml
 import util
 
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
+from agents.sac import SoftActorCritic
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
 
@@ -35,7 +37,7 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -49,6 +51,8 @@ def get_agent(name: str, action_space, agents_config) -> AbstractAgent:
         return RandomAgent(logger, action_space, cfg)
     elif name == "sarsa":
         return SarsaAgent(logger, action_space, cfg)
+    elif name == "sac":
+        return SoftActorCritic(logger, action_space, observation_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -88,6 +92,11 @@ def setup():
 
     LOGGER.debug(f'Config: {config}')
 
+    if not torch.cuda.is_available():
+        LOGGER.warning("CUDA is not available for Torch - Please check your installation!")
+    else:
+        LOGGER.info("CUDA is enabled!")
+
     max_episodes = config_overall["episodes"]["max"]
 
     env_name = config_overall["env_name"]
@@ -95,7 +104,7 @@ def setup():
     save_partitions = _parse_episode_config_var(max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(agent_name, env.action_space, config["agents"])
+    agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
 
     return env, agent, config, save_partitions
 
@@ -132,7 +141,6 @@ def _make_dirs(config, agent_name):
 
 
 def _parse_config(name="config.yml"):
-    
     with open(f'{util.get_project_root_path()}{name}') as file:
         return yaml.safe_load(file)
 

@@ -102,10 +102,15 @@ training_context_item = {
    "curr_state": state,
    "next_state": next_state,
    "reward": reward,
-   "action": action
+   "action": action,
+    "terminated": terminated
 }
 ```
+`training_context` is cyclic and bounded - i.e. once it reaches its max capacity (specificed under context_capacity in
+the config.yml, it will start replacing old items with the newer ones.)
 
-TODO (Definitely): Make the training_context bounded, and then delete old items. 
+For example: capacity = 5, training_context already contains [0, 1, 2, 3, 4]. Calling training_context.add(5) will 
+result in [1, 2, 3, 4, 5], appending 5 to the end and removing the oldest value (0).
+
 
 _If we need anything else, we can add it later, tbh I'm not really sure what we need right now so I did safe bets?_

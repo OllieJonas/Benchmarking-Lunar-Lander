@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import copy
+import torch
 
 from datetime import datetime
 
@@ -13,11 +14,17 @@ using_jupyter = False
 logger_level = logging.INFO
 
 
+def with_file_extension(name, extension):
+    extension = extension if extension.startswith(".") else f".{extension}"
+    return f'name {"" if name.endswith(extension) else extension}'
+
+
 def make_dir(name: str):
     if not os.path.exists(name):
         os.mkdir(name)
 
 
+# -------------------------------- PATHS --------------------------------
 def get_project_root_path():
     return f'{"/".join(copy.copy(sys.argv[0].split("/"))[:-2])}/'
 
@@ -35,9 +42,23 @@ def get_curr_session_output_path():
     return f'{get_output_root_path()}{AGENT_NAME} - {CURR_DATE_TIME}/'
 
 
+# -------------------------------- SAVING AND LOADING --------------------------------
+
 def save_file(directory, file_name, contents):
     with open(f'{get_curr_session_output_path()}/{directory}/{file_name}', 'w') as f:
         f.write(contents)
+
+
+def save_torch_nn(net, file_name):
+    torch.save(net.state_dict(), with_file_extension(file_name, ".mdl"))
+
+
+def load_torch_nn(net, file_name):
+    net.load_state_dict(torch.load(file_name))
+
+
+def get_torch_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def is_using_jupyter():
@@ -49,14 +70,14 @@ def set_using_jupyter(value: bool):
     using_jupyter = value
 
 
-def set_logger_level(level):
-    global logger_level
-    logger_level = level
-
-
 def set_agent_name(agent_name):
     global AGENT_NAME
     AGENT_NAME = agent_name
+
+
+def set_logger_level(level):
+    global logger_level
+    logger_level = level
 
 
 def init_logger(suffix: str = "") -> logging.Logger:

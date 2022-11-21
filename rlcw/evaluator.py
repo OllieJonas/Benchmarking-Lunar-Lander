@@ -10,7 +10,7 @@ def _get_csv_file_path(name):
            f'{"" if name.endswith(".csv") else ".csv"}'
 
 
-def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=True):
+def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=False):
     file_name = f'{util.get_curr_session_output_path()}results/png/{name}{"" if name.endswith(".png") else ".png"}'
     plt.plot(data)
 
