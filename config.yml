@@ -1,5 +1,5 @@
 overall:
-  agent_name: "sac"
+  agent_name: "ddpg"
   env_name: "LunarLanderContinuous-v2"
   context_capacity: 64
   output:

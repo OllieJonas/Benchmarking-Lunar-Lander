@@ -29,6 +29,7 @@ class DdpgAgent(CheckpointedAbstractAgent):
         self.layer2_size = config['layer2_size']
         self.n_actions = config['n_actions']
         self.max_size = config['max_size']
+        self.sample_size = 16
 
         self._batch_cnt = 0
 
@@ -86,12 +87,14 @@ class DdpgAgent(CheckpointedAbstractAgent):
             self._batch_cnt = 0
 
     def _do_train(self, training_context):
+        random_sample = training_context.random_sample(self.sample_size)
+        state, new_state, reward, action, done = [np.asarray(x) for x in zip(*random_sample)]
 
-        reward = T.tensor(reward, dtype=T.float).to(self.critic.device)
-        done = T.tensor(done).to(self.critic.device)
-        new_state = T.tensor(new_state, dtype=T.float).to(self.critic.device)
-        action = T.tensor(action, dtype=T.float).to(self.critic.device)
-        state = T.tensor(state, dtype=T.float).to(self.critic.device)
+        state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
+        new_state = T.from_numpy(new_state).type(T.FloatTensor).to(self.critic.device)
+        reward = T.from_numpy(reward).type(T.FloatTensor).to(self.critic.device)
+        action = T.from_numpy(action).type(T.FloatTensor).to(self.critic.device)
+        done = T.from_numpy(done).type(T.FloatTensor).to(self.critic.device)
 
         self.target_actor.eval()
         self.target_critic.eval()
