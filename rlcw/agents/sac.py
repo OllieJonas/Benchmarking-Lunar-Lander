@@ -119,7 +119,7 @@ class Actor(nn.Module):
         mean, std_log = self.forward(state)
         probs = torch.distributions.Normal(mean, std_log)
 
-        normal_sample = probs.sample() if not reparameterise else probs.rsample()
+        normal_sample = probs.sample()
 
         action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(DEVICE)
 
@@ -242,11 +242,6 @@ class SoftActorCritic(CheckpointedAbstractAgent):
     def _do_train(self, training_context: ReplayBuffer) -> NoReturn:
         random_sample = training_context.random_sample(self.sample_size)
 
-        random_sample = np.fromiter(((s["curr_state"], s["next_state"], s["reward"],
-                                      s["action"], s["terminated"]) for s in random_sample), dtype=random_sample.dtype)
-
-        # REMOVE ABOVE WHEN CHANGING FROM DICT TO LIST
-
         # TODO: This is literal hot garbage. Please fix. Thanks! :)
         curr_states, next_states, rewards, actions, dones = [np.asarray(x) for x in zip(*random_sample)]
 
@@ -259,23 +254,28 @@ class SoftActorCritic(CheckpointedAbstractAgent):
         curr_value = self.value_network.forward(curr_states).view(-1)
         next_value = self.target_value_network.forward(next_states).view(-1)
 
-        def value_step(reparameterise):
-            n_a, l_p = self.actor_network.sample_normal(curr_states, reparameterise)
-            l_p = l_p.view(-1)
-            q1_new = self.critic_network_1.forward(curr_states, n_a)
-            q2_new = self.critic_network_2.forward(curr_states, n_a)
-            critic_value = torch.min(q1_new, q2_new).view(-1)
+        new_actions, log_probs = self.actor_network.sample_normal(curr_states, reparameterise=False)
+        log_probs = log_probs.view(-1)
+        q1_new = self.critic_network_1.forward(curr_states, new_actions)
+        q2_new = self.critic_network_2.forward(curr_states, new_actions)
+        critic_value = torch.min(q1_new, q2_new).view(-1)
 
-            self.value_network_optimizer.zero_grad()
-            value_target = critic_value - l_p
-            value_loss = 0.5 * torch.nn.functional.mse_loss(curr_value, next_value)
-            value_loss.backward(retain_graph=True)
-            self.value_network_optimizer.step()
+        self.value_network_optimizer.zero_grad()
+        value_target = critic_value - log_probs
+        value_loss = 0.5 * torch.nn.functional.mse_loss(curr_value, next_value)
+        value_loss.backward(retain_graph=True)
+        self.value_network_optimizer.step()
 
-            return n_a, l_p
+        new_actions, log_probs = self.actor_network.sample_normal(curr_states, reparameterise=True)
+        log_probs = log_probs.view(-1)
+        q1_new = self.critic_network_1.forward(curr_states, new_actions)
+        q2_new = self.critic_network_2.forward(curr_states, new_actions)
+        critic_value = torch.min(q1_new, q2_new).view(-1)
 
-        new_actions, log_probs = value_step(False)
-        new_actions, log_probs = value_step(True)
+        actor_loss = torch.mean(log_probs - critic_value)
+        self.actor_network_optimizer.zero_grad()
+        actor_loss.backward(retain_graph=True)
+        self.actor_network_optimizer.step()
 
         self.critic_network_1_optimizer.zero_grad()
         self.critic_network_2_optimizer.zero_grad()

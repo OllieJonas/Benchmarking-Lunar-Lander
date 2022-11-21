@@ -3,6 +3,7 @@ import os
 import sys
 import copy
 import torch
+import numpy as np
 
 from datetime import datetime
 
@@ -13,6 +14,7 @@ using_jupyter = False
 
 logger_level = logging.INFO
 
+# -------------------------------- FILES --------------------------------
 
 def with_file_extension(name, extension):
     extension = extension if extension.startswith(".") else f".{extension}"
