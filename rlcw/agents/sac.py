@@ -8,7 +8,7 @@ import util
 
 from typing import NoReturn
 
-from agents.abstract_agent import AbstractAgent
+from agents.abstract_agent import CheckpointedAbstractAgent
 from replay_buffer import ReplayBuffer
 
 DEVICE = util.get_torch_device()
@@ -127,7 +127,7 @@ class Actor(nn.Module):
         return action, log_probs
 
 
-class SoftActorCritic(AbstractAgent):
+class SoftActorCritic(CheckpointedAbstractAgent):
 
     def __init__(self, logger, action_space, observation_space, config):
         super().__init__(logger, action_space, config)
@@ -198,6 +198,12 @@ class SoftActorCritic(AbstractAgent):
                                    ).to(DEVICE)
 
         self.actor_network_optimizer = optim.Adam(self.actor_network.parameters(), lr=self.learning_rate)
+
+    def save(self):
+        pass
+
+    def load(self):
+        pass
 
     def name(self) -> str:
         return "SAC"

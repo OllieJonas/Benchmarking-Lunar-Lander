@@ -2,7 +2,7 @@ import random
 import os
 import numpy as np
 from typing import NoReturn, List
-from agents.abstract_agent import AbstractAgent
+from agents.abstract_agent import CheckpointedAbstractAgent
 
 import torch as T
 import torch.nn as nn
@@ -13,9 +13,10 @@ import torch.optim as optim
 # https://www.youtube.com/watch?v=6Yd5WnYls_Y
 
 
-class DdpgAgent(AbstractAgent):
+class DdpgAgent(CheckpointedAbstractAgent):
 
     def __init__(self, logger, action_space, config):
+        super().__init__(logger, action_space, config)
         self.action_space = action_space
         self.alpha = config['alpha']
         self.beta = config['beta']
@@ -49,6 +50,12 @@ class DdpgAgent(AbstractAgent):
 
         self.update_network_parameters(tau=1)
 
+    def save(self):
+        pass
+
+    def load(self):
+        pass
+
     def name(self):
         return "ddpg"
 
@@ -70,9 +77,6 @@ class DdpgAgent(AbstractAgent):
         self.actor.train()
         action = mu_prime.cpu().detach().numpy()
         return action
-
-    def remember(self, state, action, reward, new_state, done):
-        self.memory.store_transition(state, action, reward, new_state, done)
 
     def train(self, training_context):
         if self.memory.mem_cntr < self.batch_size:
