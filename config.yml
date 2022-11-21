@@ -6,19 +6,30 @@ overall:
     verbose: true
     render: false
     save:
-      episodes: 4
+      episodes: 1000
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 5
+    max: 1000
   timesteps:
     max: 1000000000000000
     start_training: 50
 agents:
   random:
     foo: "bar"
+  ddpg:
+    alpha: 0.000025
+    beta: 0.00025
+    gamma: 0.99
+    tau: 0.001
+    batch_size: 64
+    input_dims: [8]
+    layer1_size: 400
+    layer2_size: 300
+    n_actions: 2
+    max_size: 1000000
   sac:
     sample_size: 10
     batch_size: 64
@@ -30,5 +41,3 @@ agents:
     nn_initial_weights: 0.0003
     actor_noise: 0.000001
     no_hidden_neurons: 256
-
-

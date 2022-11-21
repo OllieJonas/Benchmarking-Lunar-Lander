@@ -8,6 +8,7 @@ import util
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
+from agents.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
@@ -16,8 +17,8 @@ LOGGER: logging.Logger
 
 
 def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
-        else gym.make(env_name, render_mode="human")
+    env = gym.make(env_name, continuous=True, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+        else gym.make(env_name, continuous=True, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -32,7 +33,8 @@ def enable_jupyter(value: bool = True):
 def main():
     env, agent, config, episodes_to_save = setup()
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
-    orchestrator = Orchestrator(env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
+    orchestrator = Orchestrator(
+        env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
     orchestrator.eval()
 
@@ -51,6 +53,8 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
         return RandomAgent(logger, action_space, cfg)
     elif name == "sarsa":
         return SarsaAgent(logger, action_space, cfg)
+    elif name == "ddpg":
+        return DdpgAgent(logger, action_space, cfg)
     elif name == "sac":
         return SoftActorCritic(logger, action_space, observation_space, cfg)
     else:
@@ -87,7 +91,8 @@ def setup():
     should_render = config_output["render"]
 
     if should_render and should_record:
-        LOGGER.warning("Can't render and record at the same time! Disabling recording ...")
+        LOGGER.warning(
+            "Can't render and record at the same time! Disabling recording ...")
         should_record = False
 
     LOGGER.debug(f'Config: {config}')
@@ -101,7 +106,8 @@ def setup():
 
     env_name = config_overall["env_name"]
 
-    save_partitions = _parse_episode_config_var(max_episodes, config_output["save"]["episodes"])
+    save_partitions = _parse_episode_config_var(
+        max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
     agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])

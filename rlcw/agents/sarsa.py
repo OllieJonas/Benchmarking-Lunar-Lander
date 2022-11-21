@@ -58,8 +58,8 @@ class SarsaAgent(AbstractAgent):
         na = self.get_action(state2)
 
         delta = self.alpha * (
-                reward
-                + self.gamma * self.Q[ns[0], ns[1], na]
-                - self.Q[s[0], s[1], action]
+            reward
+            + self.gamma * self.Q[ns[0], ns[1], na]
+            - self.Q[s[0], s[1], action]
         )
         self.Q[s[0], s[1], action] += delta
