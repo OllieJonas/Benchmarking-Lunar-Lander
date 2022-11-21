@@ -48,6 +48,8 @@ class Value(nn.Module):
         self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
         self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
 
+        self.float()
+
     def forward(self, state):
         inp = nn.functional.relu(self.input_layer(state))
         hidden = nn.functional.relu(self.hidden_layer(inp))
@@ -73,6 +75,8 @@ class Critic(nn.Module):
 
         self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
         self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
+
+        self.float()
 
     def forward(self, state, action):
         x = nn.functional.relu(self.input_layer(torch.cat([state, action], dim=1)))
@@ -113,6 +117,8 @@ class Actor(nn.Module):
         self.std.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
         self.std.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
 
+        self.float()
+
     def forward(self, state):
         x = nn.functional.relu(self.input_layer(state))
         x = nn.functional.relu(self.hidden_layer(x))
@@ -126,12 +132,11 @@ class Actor(nn.Module):
         mean, std_log = self.forward(state)
         probs = torch.distributions.Normal(mean, std_log)
 
-        actions = probs.sample()
-        action = torch.tanh(actions) * torch.Tensor(self.max_action).to(DEVICE)
+        normal_sample = probs.sample()  # if not reparameterize else probs.rsample()
 
-        log_probs = probs.log_prob(actions) - torch.log(1 - action.pow(2) + self.noise)
-        log_probs = log_probs.sum(1, keepdims=True)
+        action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(DEVICE)
 
+        log_probs = (probs.log_prob(normal_sample) - torch.log(1 - action.pow(2) + self.noise)).sum(1)
         return action, log_probs
 
 
@@ -142,12 +147,12 @@ class SoftActorCritic(AbstractAgent):
         self.logger.info(f'SAC Config: {config}')
 
         self.observation_space = observation_space
-        self.action_size = action_space.n
+        self.action_size = action_space.shape[0]
         self.state_size = observation_space.shape[0]
         self.no_updates = 10
         self.sample_size = 10
 
-        self.max_action = action_space.n
+        self.max_action = action_space.high
         self.batch_size = 10
         self.alpha = 0.9
         self.gamma = 0.9
@@ -205,7 +210,6 @@ class SoftActorCritic(AbstractAgent):
         actions, _ = self.actor_network.sample_normal(state)
 
         action = actions.cpu().detach().numpy()[0]
-        self.logger.info(f"action: {action}")
         return action
 
     def train(self, training_context: ReplayBuffer) -> NoReturn:
@@ -227,20 +231,20 @@ class SoftActorCritic(AbstractAgent):
         # TODO: This is literal hot garbage. Please fix. Thanks! :)
         curr_states, next_states, rewards, actions, dones = [np.asarray(x) for x in zip(*random_sample)]
 
-        curr_states = torch.from_numpy(curr_states).to(DEVICE)
-        next_states = torch.from_numpy(next_states).to(DEVICE)
-        rewards = torch.from_numpy(rewards).to(DEVICE)
-        actions = torch.from_numpy(actions).to(DEVICE)
-        dones = torch.from_numpy(dones).to(DEVICE)
+        curr_states = torch.from_numpy(curr_states).type(torch.FloatTensor).to(DEVICE)
+        next_states = torch.from_numpy(next_states).type(torch.FloatTensor).to(DEVICE)
+        rewards = torch.from_numpy(rewards).type(torch.FloatTensor).to(DEVICE)
+        actions = torch.from_numpy(actions).type(torch.FloatTensor).to(DEVICE)
+        dones = torch.from_numpy(dones).type(torch.FloatTensor).to(DEVICE)
 
-        curr_value = self.value_network.forward(curr_states)
-        next_value = self.target_value_network.forward(next_states)
-        next_value[dones] = 0
+        curr_value = self.value_network.forward(curr_states).view(-1)
+        next_value = self.target_value_network.forward(next_states).view(-1)
 
         new_actions, log_probs = self.actor_network.sample_normal(curr_states)
+        log_probs = log_probs.view(-1)
         q1_new = self.critic_network_1.forward(curr_states, new_actions)
         q2_new = self.critic_network_2.forward(curr_states, new_actions)
-        critic_value = torch.min(q1_new, q2_new)
+        critic_value = torch.min(q1_new, q2_new).view(-1)
 
         self.value_network_optimizer.zero_grad()
         value_target = critic_value - log_probs
@@ -249,20 +253,21 @@ class SoftActorCritic(AbstractAgent):
         self.value_network_optimizer.step()
 
         new_actions, log_probs = self.actor_network.sample_normal(curr_states)
+        log_probs = log_probs.view(-1)
         q1_new = self.critic_network_1.forward(curr_states, new_actions)
         q2_new = self.critic_network_2.forward(curr_states, new_actions)
-        critic_value = torch.min(q1_new, q2_new)
+        critic_value = torch.min(q1_new, q2_new).view(-1)
 
         actor_loss = torch.mean(log_probs - critic_value)
-        self.actor_network.optimizer.zero_grad()
+        self.actor_network_optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
-        self.actor_network.optimizer.step()
+        self.actor_network_optimizer.step()
 
         self.critic_network_1_optimizer.zero_grad()
         self.critic_network_2_optimizer.zero_grad()
         q_hat = self.scale * rewards + self.gamma * next_value
-        q1_old = self.critic_network_1.forward(curr_states, new_actions)
-        q2_old = self.critic_network_2.forward(curr_states, new_actions)
+        q1_old = self.critic_network_1.forward(curr_states, new_actions).view(-1)
+        q2_old = self.critic_network_2.forward(curr_states, new_actions).view(-1)
 
         critic_1_loss = 0.5 * torch.nn.functional.mse_loss(q1_old, q_hat)
         critic_2_loss = 0.5 * torch.nn.functional.mse_loss(q2_old, q_hat)
