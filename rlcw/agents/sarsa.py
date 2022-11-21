@@ -22,14 +22,15 @@ class SarsaAgent(AbstractAgent):
 
     def _make_q(self, observation):
 
-        n_states = (np.ones(8).shape) * np.array([100, 1000])
+        n_states = np.ones(8).shape * np.array([100, 1000])
         n_states = np.round(n_states, 0).astype(int) + 1
 
         n_actions = self.action_space.n
 
         return np.zeros([n_states[0], n_states[1], n_actions])
 
-    def _continuous_to_discrete(self, observation):
+    @staticmethod
+    def _continuous_to_discrete(observation):
 
         min_obs = observation.min()
         discrete = (observation - min_obs).reshape(4, 2) * np.array([10, 100])
@@ -46,7 +47,7 @@ class SarsaAgent(AbstractAgent):
         return action
 
     def train(self, training_context: List) -> NoReturn:
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         state = training_context[0]["curr_state"]
         state2 = training_context[0]["next_state"]
         action = training_context[0]["action"]
