@@ -14,23 +14,9 @@ from replay_buffer import ReplayBuffer
 DEVICE = util.get_torch_device()
 
 
-def soft_copy(v, t_v, tau):
-    value_state_dict = dict(v.named_parameters())
-    target_value_state_dict = dict(t_v.named_parameters())
-
-    for key in value_state_dict:
-        value_state_dict[key] = tau * value_state_dict[key].clone() + (1 - tau) * target_value_state_dict[key].clone()
-
-    t_v.load_state_dict(value_state_dict)
-
-
-def hard_copy(v, t_v):
-    t_v.load_state_dict(dict(v.named_parameters()))
-
-
 class Value(nn.Module):
 
-    def __init__(self, no_states, no_hidden_neurons, no_layers=1):
+    def __init__(self, no_states, no_hidden_neurons, no_layers=1, initial_weight=3e-3):
         super(Value, self).__init__()
 
         if no_layers <= 0:
@@ -39,7 +25,7 @@ class Value(nn.Module):
         self.no_states = no_states
         self.no_hidden_neurons = no_hidden_neurons
         self.no_layers = no_layers
-        self.initial_weight = 3e-3
+        self.initial_weight = initial_weight
 
         self.input_layer = nn.Linear(no_states, no_hidden_neurons)
         self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
@@ -60,14 +46,14 @@ class Value(nn.Module):
 
 class Critic(nn.Module):
 
-    def __init__(self, no_states, no_actions, no_hidden_neurons, no_layers=1):
+    def __init__(self, no_states, no_actions, no_hidden_neurons, no_layers=1, initial_weight=3e-3):
         super(Critic, self).__init__()
 
         self.no_states = no_states
         self.no_actions = no_actions
         self.no_hidden_neurons = no_hidden_neurons
         self.no_layers = no_layers
-        self.initial_weight = 3e-3
+        self.initial_weight = initial_weight
 
         self.input_layer = nn.Linear(no_states + no_actions, no_hidden_neurons)
         self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
@@ -90,7 +76,8 @@ class Actor(nn.Module):
                  no_layers=1,
                  min_std_log=0,
                  max_std_log=1,
-                 noise=1e-06):
+                 noise=1e-06,
+                 initial_weight=3e-3):
         super(Actor, self).__init__()
 
         self.max_action = max_action
@@ -104,7 +91,7 @@ class Actor(nn.Module):
         self.max_std_log = max_std_log
         self.noise = noise
 
-        self.initial_weight = 3e-3
+        self.initial_weight = initial_weight
 
         self.input_layer = nn.Linear(*state_shape, no_hidden_neurons)
         self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
@@ -128,11 +115,11 @@ class Actor(nn.Module):
 
         return mean, std_log
 
-    def sample_normal(self, state):
+    def sample_normal(self, state, reparameterise=True):
         mean, std_log = self.forward(state)
         probs = torch.distributions.Normal(mean, std_log)
 
-        normal_sample = probs.sample()  # if not reparameterize else probs.rsample()
+        normal_sample = probs.sample() if not reparameterise else probs.rsample()
 
         action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(DEVICE)
 
@@ -149,32 +136,37 @@ class SoftActorCritic(AbstractAgent):
         self.observation_space = observation_space
         self.action_size = action_space.shape[0]
         self.state_size = observation_space.shape[0]
-        self.no_updates = 10
-        self.sample_size = 10
-
         self.max_action = action_space.high
-        self.batch_size = 10
-        self.alpha = 0.9
-        self.gamma = 0.9
 
-        self.scale = 2
-        self.tau = 0.005
+        # hyperparams
+        # batches
+        self.sample_size = config["sample_size"]
+        self.batch_size = config["batch_size"]
 
+        # algo
+        self.alpha = config["alpha"]
+        self.gamma = config["gamma"]
+
+        self.scale = config["scale"]
+        self.tau = config["tau"]
+
+        # nn
+        self.nn_initial_weights = config["nn_initial_weights"]
+        self.actor_noise = config["actor_noise"]
         self.learning_rate = config["learning_rate"]
-        self.no_hidden_layers = config["no_hidden_layers"]
         self.no_hidden_neurons = config["no_hidden_neurons"]
 
         # networks
         self.value_network = Value(no_states=self.state_size,
                                    no_hidden_neurons=self.no_hidden_neurons,
-                                   no_layers=self.no_hidden_layers,
+                                   initial_weight=self.nn_initial_weights,
                                    ).to(DEVICE)
 
         self.value_network_optimizer = optim.Adam(self.value_network.parameters(), lr=self.learning_rate)
 
         self.target_value_network = Value(no_states=self.state_size,
                                           no_hidden_neurons=self.no_hidden_neurons,
-                                          no_layers=self.no_hidden_layers,
+                                          initial_weight=self.nn_initial_weights,
                                           ).to(DEVICE)
 
         self.target_value_network_optimizer = optim.Adam(self.target_value_network.parameters(), lr=self.learning_rate)
@@ -182,6 +174,7 @@ class SoftActorCritic(AbstractAgent):
         self.critic_network_1 = Critic(no_states=self.state_size,
                                        no_actions=self.action_size,
                                        no_hidden_neurons=self.no_hidden_neurons,
+                                       initial_weight=self.nn_initial_weights,
                                        ).to(DEVICE)
 
         self.critic_network_1_optimizer = optim.Adam(self.critic_network_1.parameters(), lr=self.learning_rate)
@@ -189,6 +182,7 @@ class SoftActorCritic(AbstractAgent):
         self.critic_network_2 = Critic(no_states=self.state_size,
                                        no_actions=self.action_size,
                                        no_hidden_neurons=self.no_hidden_neurons,
+                                       initial_weight=self.nn_initial_weights,
                                        ).to(DEVICE)
 
         self.critic_network_2_optimizer = optim.Adam(self.critic_network_2.parameters(), lr=self.learning_rate)
@@ -198,6 +192,7 @@ class SoftActorCritic(AbstractAgent):
                                    no_states=self.state_size,
                                    no_actions=self.action_size,
                                    no_hidden_neurons=self.no_hidden_neurons,
+                                   initial_weight=self.nn_initial_weights,
                                    ).to(DEVICE)
 
         self.actor_network_optimizer = optim.Adam(self.actor_network.parameters(), lr=self.learning_rate)
@@ -220,6 +215,21 @@ class SoftActorCritic(AbstractAgent):
         else:
             self._do_train(training_context)
 
+    @staticmethod
+    def _soft_copy(v, t_v, tau):
+        value_state_dict = dict(v.named_parameters())
+        target_value_state_dict = dict(t_v.named_parameters())
+
+        for key in value_state_dict:
+            value_state_dict[key] = tau * value_state_dict[key].clone() + (1 - tau) * target_value_state_dict[
+                key].clone()
+
+        t_v.load_state_dict(value_state_dict)
+
+    @staticmethod
+    def _hard_copy(v, t_v):
+        t_v.load_state_dict(dict(v.named_parameters()))
+
     def _do_train(self, training_context: ReplayBuffer) -> NoReturn:
         random_sample = training_context.random_sample(self.sample_size)
 
@@ -240,28 +250,23 @@ class SoftActorCritic(AbstractAgent):
         curr_value = self.value_network.forward(curr_states).view(-1)
         next_value = self.target_value_network.forward(next_states).view(-1)
 
-        new_actions, log_probs = self.actor_network.sample_normal(curr_states)
-        log_probs = log_probs.view(-1)
-        q1_new = self.critic_network_1.forward(curr_states, new_actions)
-        q2_new = self.critic_network_2.forward(curr_states, new_actions)
-        critic_value = torch.min(q1_new, q2_new).view(-1)
+        def value_step(reparameterise):
+            n_a, l_p = self.actor_network.sample_normal(curr_states, reparameterise)
+            l_p = l_p.view(-1)
+            q1_new = self.critic_network_1.forward(curr_states, n_a)
+            q2_new = self.critic_network_2.forward(curr_states, n_a)
+            critic_value = torch.min(q1_new, q2_new).view(-1)
 
-        self.value_network_optimizer.zero_grad()
-        value_target = critic_value - log_probs
-        value_loss = 0.5 * torch.nn.functional.mse_loss(curr_value, next_value)
-        value_loss.backward(retain_graph=True)
-        self.value_network_optimizer.step()
+            self.value_network_optimizer.zero_grad()
+            value_target = critic_value - l_p
+            value_loss = 0.5 * torch.nn.functional.mse_loss(curr_value, next_value)
+            value_loss.backward(retain_graph=True)
+            self.value_network_optimizer.step()
 
-        new_actions, log_probs = self.actor_network.sample_normal(curr_states)
-        log_probs = log_probs.view(-1)
-        q1_new = self.critic_network_1.forward(curr_states, new_actions)
-        q2_new = self.critic_network_2.forward(curr_states, new_actions)
-        critic_value = torch.min(q1_new, q2_new).view(-1)
+            return n_a, l_p
 
-        actor_loss = torch.mean(log_probs - critic_value)
-        self.actor_network_optimizer.zero_grad()
-        actor_loss.backward(retain_graph=True)
-        self.actor_network_optimizer.step()
+        new_actions, log_probs = value_step(False)
+        new_actions, log_probs = value_step(True)
 
         self.critic_network_1_optimizer.zero_grad()
         self.critic_network_2_optimizer.zero_grad()
@@ -277,4 +282,4 @@ class SoftActorCritic(AbstractAgent):
         self.critic_network_1_optimizer.step()
         self.critic_network_2_optimizer.step()
 
-        soft_copy(self.value_network, self.target_value_network, self.tau)
+        self._soft_copy(self.value_network, self.target_value_network, self.tau)
