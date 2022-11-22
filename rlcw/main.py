@@ -53,7 +53,7 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
         return RandomAgent(logger, action_space, cfg)
     elif name == "sarsa":
         return SarsaAgent(logger, action_space, cfg)
-    elif name == "ddpg - 20-14-28_11-22-2022":
+    elif name == "ddpg":
         return DdpgAgent(logger, action_space, cfg)
     elif name == "sac":
         return SoftActorCritic(logger, action_space, observation_space, cfg)

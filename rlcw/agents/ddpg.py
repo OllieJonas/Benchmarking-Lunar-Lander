@@ -58,7 +58,7 @@ class DdpgAgent(CheckpointedAbstractAgent):
         pass
 
     def name(self):
-        return "ddpg - 20-14-28_11-22-2022"
+        return "ddpg"
 
     # returns the action for agent to do at beginning of each time-step
     # def get_action(self, state):
@@ -232,7 +232,7 @@ class ActionNoise(object):
 
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name,
-                 chkpt_dir='tmp/ddpg - 20-14-28_11-22-2022'):
+                 chkpt_dir='tmp/ddpg'):
         super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -287,7 +287,7 @@ class CriticNetwork(nn.Module):
 
 class ActorNetwork(nn.Module):
     def __init__(self, alpha, input_dims, fc1_dims, fc2_dims, n_actions, name,
-                 chkpt_dir='tmp/ddpg - 20-14-28_11-22-2022'):
+                 chkpt_dir='tmp/ddpg'):
         super(ActorNetwork, self).__init__()
         self.input_dims = input_dims
         self.n_actions = n_actions
