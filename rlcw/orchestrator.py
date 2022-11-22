@@ -125,13 +125,12 @@ class Runner:
                 else:
                     self.env.render()
 
-            training_context.add({
-                "curr_state": state,
-                "next_state": next_state,
-                "reward": reward,
-                "action": action,
-                "terminated": terminated
-            })
+            training_context.add(np.array([
+                state,
+                next_state,
+                reward,
+                action,
+                terminated], dtype=object))
 
             if t > self.start_training_timesteps:
                 self.agent.train(training_context)
