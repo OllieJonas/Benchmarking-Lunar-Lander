@@ -4,6 +4,7 @@ import gym
 import torch
 import yaml
 import util
+import logger
 
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
@@ -11,7 +12,6 @@ from agents.sarsa import SarsaAgent
 from agents.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
 from orchestrator import Orchestrator
-from util import init_logger, make_dir, set_logger_level
 
 LOGGER: logging.Logger
 
@@ -79,12 +79,12 @@ def setup():
 
     _make_dirs(config, agent_name)
 
-    LOGGER = util.init_logger("Main")
+    LOGGER = logger.init_logger("Main")
 
     logger_level = logging.DEBUG if config_output["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
-    util.set_logger_level(logger_level)
+    logger.set_logger_level(logger_level)
 
     # can't render in human mode and record at the same time
     should_record = config_output["save"]["recordings"]

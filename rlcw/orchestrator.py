@@ -5,6 +5,7 @@ from IPython import display
 
 import evaluator as eval
 import util
+import logger
 from agents.abstract_agent import AbstractAgent
 from replay_buffer import ReplayBuffer
 
@@ -12,7 +13,7 @@ from replay_buffer import ReplayBuffer
 class Orchestrator:
 
     def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
-        self.LOGGER = util.init_logger("Orchestrator")
+        self.LOGGER = logger.init_logger("Orchestrator")
 
         self.env = env
         self.agent = agent
@@ -81,7 +82,7 @@ class Runner:
                  max_episodes,
                  start_training_timesteps,
                  training_ctx_capacity):
-        self.LOGGER = util.init_logger("Runner")
+        self.LOGGER = logger.init_logger("Runner")
 
         self.env = env
         self.agent = agent

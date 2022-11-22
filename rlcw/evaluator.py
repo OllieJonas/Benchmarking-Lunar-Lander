@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 import util as util
+import logger
 
 
 def _get_csv_file_path(name):
@@ -28,7 +29,7 @@ def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=F
 
 class Evaluator:
     def __init__(self, results, should_save_charts, should_save_csv, agent_name: str = ""):
-        self.LOGGER = util.init_logger("Evaluator")
+        self.LOGGER = logger.init_logger("Evaluator")
 
         self.results = results
         self.should_save_charts = should_save_charts
