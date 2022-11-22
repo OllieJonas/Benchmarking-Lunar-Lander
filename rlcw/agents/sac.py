@@ -218,11 +218,13 @@ class SoftActorCritic(CheckpointedAbstractAgent):
     def train(self, training_context: ReplayBuffer) -> NoReturn:
         if training_context.max_capacity < self.batch_size:  # sanity check
             raise ValueError("max capacity of training_context is less than the batch size! :(")
-        elif self._batch_cnt <= self.batch_size:
+
+        if self._batch_cnt <= self.batch_size:
             self._batch_cnt += 1
+            return
         else:
-            self._do_train(training_context)
             self._batch_cnt = 0
+            self._do_train(training_context)
 
     @staticmethod
     def _soft_copy(v, t_v, tau):

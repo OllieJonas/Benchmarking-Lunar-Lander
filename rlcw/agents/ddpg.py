@@ -80,6 +80,8 @@ class DdpgAgent(CheckpointedAbstractAgent):
         return action
 
     def train(self, training_context):
+        if self.sample_size >= self.batch_size:
+            raise ValueError(f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
         if self._batch_cnt <= self.batch_size:
             self._batch_cnt += 1
         else:
@@ -87,7 +89,7 @@ class DdpgAgent(CheckpointedAbstractAgent):
             self._batch_cnt = 0
 
     def _do_train(self, training_context):
-        random_sample = training_context.random_sample(self.sample_size)
+        random_sample = training_context.random_sample(self.batch_size)
         state, new_state, reward, action, done = [np.asarray(x) for x in zip(*random_sample)]
 
         state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
@@ -104,25 +106,30 @@ class DdpgAgent(CheckpointedAbstractAgent):
         critic_value = self.critic.forward(state, action)
 
         target = []
+
         for j in range(self.batch_size):
-            target.append(reward[j] + self.gamma * critic_value_[j] * done[j])
+            _reward = reward[j]
+            _critic_value_ = critic_value_[j]
+            _done = done[j]
+            target.append(_reward + self.gamma * _critic_value_ * _done)
+
         target = T.tensor(target).to(self.critic.device)
         target = target.view(self.batch_size, 1)
 
         self.critic.train()
-        self.critic.optimizer.zero_grad()
+        self.critic.optimiser.zero_grad()
         critic_loss = F.mse_loss(target, critic_value)
         critic_loss.backward()
-        self.critic.optimizer.step()
+        self.critic.optimiser.step()
 
         self.critic.eval()
-        self.actor.optimizer.zero_grad()
+        self.actor.optimiser.zero_grad()
         mu = self.actor.forward(state)
         self.actor.train()
         actor_loss = -self.critic.forward(state, mu)
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
-        self.actor.optimizer.step()
+        self.actor.optimiser.step()
 
         self.update_network_parameters()
 
@@ -199,6 +206,7 @@ class DdpgAgent(CheckpointedAbstractAgent):
 
 class ActionNoise(object):
     def __init__(self, mu, sigma=0.15, theta=0.2, dt=1e-2, x0=None):
+        self.x_prev = None
         self.theta = theta
         self.mu = mu
         self.sigma = sigma
@@ -242,7 +250,7 @@ class CriticNetwork(nn.Module):
         f2 = 1 / np.sqrt(self.fc2.weight.data.size()[0])
         T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
         T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
-        self.bn2 = nn.LayerNorm(self.fc1_dims)
+        self.bn2 = nn.LayerNorm(self.fc2_dims)
 
         self.action_value = nn.Linear(self.n_actions, fc2_dims)
         f3 = 0.003
@@ -303,7 +311,7 @@ class ActorNetwork(nn.Module):
         T.nn.init.uniform_(self.mu.weight.data, -f3, f3)
         T.nn.init.uniform_(self.mu.bias.data, -f3, f3)
 
-        self.optimser = optim.Adam(self.parameters(), lr=alpha)
+        self.optimiser = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
