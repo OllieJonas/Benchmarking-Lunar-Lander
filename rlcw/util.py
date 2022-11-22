@@ -33,6 +33,10 @@ def get_latest_run_of(name: str):
     return [s for s in walk if latest and latest[0] in s[0]]
 
 
+def get_latest_policies_for(name: str):
+    latest = get_latest_run_of(name)
+
+
 # -------------------------------- PATHS --------------------------------
 def get_project_root_path():
     return f'{"/".join(copy.copy(sys.argv[0].split("/"))[:-2])}/'
