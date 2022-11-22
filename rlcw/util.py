@@ -25,6 +25,14 @@ def make_dir(name: str):
         os.mkdir(name)
 
 
+def get_latest_run_of(name: str):
+    # it's not my code if I don't fit in a ridiculous, confusing & overly complicated one-liner >:)
+    # shame im really fighting against python to do this, man streams are so much easier >:(
+    walk = list(os.walk(get_output_root_path()))[1:]
+    latest = sorted(list(set([s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]])), reverse=True)
+    return [s for s in walk if latest and latest[0] in s[0]]
+
+
 # -------------------------------- PATHS --------------------------------
 def get_project_root_path():
     return f'{"/".join(copy.copy(sys.argv[0].split("/"))[:-2])}/'
@@ -74,3 +82,8 @@ def set_using_jupyter(value: bool):
 def set_agent_name(agent_name):
     global AGENT_NAME
     AGENT_NAME = agent_name
+
+
+if __name__ == "__main__":
+    print(get_latest_run_of("ddpg"))
+    print(get_latest_run_of("sac"))
