@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+
 # Code **inspired** by
 # https://www.youtube.com/watch?v=6Yd5WnYls_Y
 
@@ -28,9 +29,9 @@ class DdpgAgent(CheckpointedAbstractAgent):
         self.layer2_size = config['layer2_size']
         self.n_actions = config['n_actions']
         self.max_size = config['max_size']
+        self.sample_size = 16
 
-        self.memory = ReplayBuffer(
-            self.max_size, self.input_dims, self.n_actions)
+        self._batch_cnt = 0
 
         self.actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
                                   self.layer2_size, n_actions=self.n_actions,
@@ -79,16 +80,23 @@ class DdpgAgent(CheckpointedAbstractAgent):
         return action
 
     def train(self, training_context):
-        if self.memory.mem_cntr < self.batch_size:
-            return
-        state, action, reward, new_state, done = \
-            self.memory.sample_buffer(self.batch_size)
+        if self.sample_size >= self.batch_size:
+            raise ValueError(f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
+        if self._batch_cnt <= self.batch_size:
+            self._batch_cnt += 1
+        else:
+            self._do_train(training_context)
+            self._batch_cnt = 0
 
-        reward = T.tensor(reward, dtype=T.float).to(self.critic.device)
-        done = T.tensor(done).to(self.critic.device)
-        new_state = T.tensor(new_state, dtype=T.float).to(self.critic.device)
-        action = T.tensor(action, dtype=T.float).to(self.critic.device)
-        state = T.tensor(state, dtype=T.float).to(self.critic.device)
+    def _do_train(self, training_context):
+        random_sample = training_context.random_sample(self.batch_size)
+        state, new_state, reward, action, done = [np.asarray(x) for x in zip(*random_sample)]
+
+        state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
+        new_state = T.from_numpy(new_state).type(T.FloatTensor).to(self.critic.device)
+        reward = T.from_numpy(reward).type(T.FloatTensor).to(self.critic.device)
+        action = T.from_numpy(action).type(T.FloatTensor).to(self.critic.device)
+        done = T.from_numpy(done).type(T.FloatTensor).to(self.critic.device)
 
         self.target_actor.eval()
         self.target_critic.eval()
@@ -98,25 +106,30 @@ class DdpgAgent(CheckpointedAbstractAgent):
         critic_value = self.critic.forward(state, action)
 
         target = []
+
         for j in range(self.batch_size):
-            target.append(reward[j] + self.gamma*critic_value_[j]*done[j])
+            _reward = reward[j]
+            _critic_value_ = critic_value_[j]
+            _done = done[j]
+            target.append(_reward + self.gamma * _critic_value_ * _done)
+
         target = T.tensor(target).to(self.critic.device)
         target = target.view(self.batch_size, 1)
 
         self.critic.train()
-        self.critic.optimizer.zero_grad()
+        self.critic.optimiser.zero_grad()
         critic_loss = F.mse_loss(target, critic_value)
         critic_loss.backward()
-        self.critic.optimizer.step()
+        self.critic.optimiser.step()
 
         self.critic.eval()
-        self.actor.optimizer.zero_grad()
+        self.actor.optimiser.zero_grad()
         mu = self.actor.forward(state)
         self.actor.train()
         actor_loss = -self.critic.forward(state, mu)
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
-        self.actor.optimizer.step()
+        self.actor.optimiser.step()
 
         self.update_network_parameters()
 
@@ -135,14 +148,14 @@ class DdpgAgent(CheckpointedAbstractAgent):
         target_actor_dict = dict(target_actor_params)
 
         for name in critic_state_dict:
-            critic_state_dict[name] = tau*critic_state_dict[name].clone() + \
-                (1-tau)*target_critic_dict[name].clone()
+            critic_state_dict[name] = tau * critic_state_dict[name].clone() + \
+                                      (1 - tau) * target_critic_dict[name].clone()
 
         self.target_critic.load_state_dict(critic_state_dict)
 
         for name in actor_state_dict:
-            actor_state_dict[name] = tau*actor_state_dict[name].clone() + \
-                (1-tau)*target_actor_dict[name].clone()
+            actor_state_dict[name] = tau * actor_state_dict[name].clone() + \
+                                     (1 - tau) * target_actor_dict[name].clone()
         self.target_actor.load_state_dict(actor_state_dict)
 
         """
@@ -193,8 +206,9 @@ class DdpgAgent(CheckpointedAbstractAgent):
 
 class ActionNoise(object):
     def __init__(self, mu, sigma=0.15, theta=0.2, dt=1e-2, x0=None):
+        self.x_prev = None
         self.theta = theta
-        self. mu = mu
+        self.mu = mu
         self.sigma = sigma
         self.dt = dt
         self.x0 = x0
@@ -203,7 +217,7 @@ class ActionNoise(object):
     # overrides call function, removes need for obj.meth(), can just use meth()
     def __call__(self):
         x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
-            self.sigma + np.sqrt(self.dt)*np.random.normal(size=self.mu.shape)
+            self.sigma + np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
         self.x_prev = x
         return x
 
@@ -216,38 +230,6 @@ class ActionNoise(object):
             self.mu, self.sigma)
 
 
-class ReplayBuffer(object):
-    def __init__(self, max_size, input_shape, n_actions):
-        self.mem_size = max_size
-        self.mem_cntr = 0
-        self.state_memory = np.zeros((self.mem_size, *input_shape))
-        self.new_state_memory = np.zeros((self.mem_size, *input_shape))
-        self.action_memory = np.zeros((self.mem_size, n_actions))
-        self.reward_memory = np.zeros(self.mem_size)
-        self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
-
-    def store_transaction(self, state, action, reward, state_, done):
-        index = self.mem_cntr % self.mem_size
-        self.state_memory[index] = state
-        self.action_memory[index] = action
-        self.reward_memory[index] = reward
-        self.new_state_memory[index] = state_
-        self.terminal_memory[index] = 1 - done
-        self.mem_cntr += 1
-
-    def sample_buffer(self, batch_size):
-        max_mem = min(self.mem_cntr, self.mem_size)
-        batch = np.random.choice(max_mem, batch_size)
-
-        states = self.state_memory[batch]
-        new_states = self.new_state_memory[batch]
-        rewards = self.reward_memory[batch]
-        actions = self.action_memory[batch]
-        terminal = self.terminal_memory[batch]
-
-        return states, actions, rewards, new_states, terminal
-
-
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name,
                  chkpt_dir='tmp/ddpg'):
@@ -256,7 +238,7 @@ class CriticNetwork(nn.Module):
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
-        self.checkpoint_file = os.path.join(chkpt_dir, name+'_ddpg')
+        self.checkpoint_file = os.path.join(chkpt_dir, name + '_ddpg')
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         f1 = 1 / np.sqrt(self.fc1.weight.data.size()[0])
@@ -268,7 +250,7 @@ class CriticNetwork(nn.Module):
         f2 = 1 / np.sqrt(self.fc2.weight.data.size()[0])
         T.nn.init.uniform_(self.fc2.weight.data, -f2, f2)
         T.nn.init.uniform_(self.fc2.bias.data, -f2, f2)
-        self.bn2 = nn.LayerNorm(self.fc1_dims)
+        self.bn2 = nn.LayerNorm(self.fc2_dims)
 
         self.action_value = nn.Linear(self.n_actions, fc2_dims)
         f3 = 0.003
@@ -311,7 +293,7 @@ class ActorNetwork(nn.Module):
         self.n_actions = n_actions
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
-        self.checkpoint_file = os.path.join(chkpt_dir, name+'_ddpg')
+        self.checkpoint_file = os.path.join(chkpt_dir, name + '_ddpg')
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         f1 = 1 / np.sqrt(self.fc1.weight.data.size()[0])
         T.nn.init.uniform_(self.fc1.weight.data, -f1, f1)
@@ -329,7 +311,7 @@ class ActorNetwork(nn.Module):
         T.nn.init.uniform_(self.mu.weight.data, -f3, f3)
         T.nn.init.uniform_(self.mu.bias.data, -f3, f3)
 
-        self.optimser = optim.Adam(self.parameters(), lr=alpha)
+        self.optimiser = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.to(self.device)
 
