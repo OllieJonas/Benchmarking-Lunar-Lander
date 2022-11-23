@@ -89,14 +89,8 @@ class DdpgAgent(CheckpointedAbstractAgent):
             self._batch_cnt = 0
 
     def _do_train(self, training_context):
-        random_sample = training_context.random_sample(self.batch_size)
-        state, new_state, reward, action, done = [np.asarray(x) for x in zip(*random_sample)]
-
-        state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
-        new_state = T.from_numpy(new_state).type(T.FloatTensor).to(self.critic.device)
-        reward = T.from_numpy(reward).type(T.FloatTensor).to(self.critic.device)
-        action = T.from_numpy(action).type(T.FloatTensor).to(self.critic.device)
-        done = T.from_numpy(done).type(T.FloatTensor).to(self.critic.device)
+        state, new_state, reward, action, done = \
+            training_context.random_sample_transformed(self.batch_size, self.critic.device)
 
         self.target_actor.eval()
         self.target_critic.eval()

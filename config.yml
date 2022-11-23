@@ -43,3 +43,4 @@ agents:
     no_hidden_neurons: 256
   dqn:
     foo: "bar"
+    learning_rate: 0.0001

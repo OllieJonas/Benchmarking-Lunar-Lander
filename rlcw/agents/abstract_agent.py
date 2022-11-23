@@ -1,5 +1,7 @@
 from typing import NoReturn
 from abc import abstractmethod, ABC
+
+import util
 from rlcw.replay_buffer import ReplayBuffer
 
 NOT_IMPLEMENTED_MESSAGE = "This hasn't been implemented yet! :("
@@ -11,6 +13,8 @@ class AbstractAgent(ABC):
         self.logger = logger
         self.action_space = action_space
         self.config = config
+
+        self.device = util.get_torch_device()
 
     @abstractmethod
     def name(self) -> str:

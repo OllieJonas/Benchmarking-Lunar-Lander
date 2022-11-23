@@ -242,16 +242,8 @@ class SoftActorCritic(CheckpointedAbstractAgent):
         t_v.load_state_dict(dict(v.named_parameters()))
 
     def _do_train(self, training_context: ReplayBuffer) -> NoReturn:
-        random_sample = training_context.random_sample(self.sample_size)
-
-        # TODO: This is literal hot garbage. Please fix. Thanks! :)
-        curr_states, next_states, rewards, actions, dones = [np.asarray(x) for x in zip(*random_sample)]
-
-        curr_states = torch.from_numpy(curr_states).type(torch.FloatTensor).to(DEVICE)
-        next_states = torch.from_numpy(next_states).type(torch.FloatTensor).to(DEVICE)
-        rewards = torch.from_numpy(rewards).type(torch.FloatTensor).to(DEVICE)
-        actions = torch.from_numpy(actions).type(torch.FloatTensor).to(DEVICE)
-        dones = torch.from_numpy(dones).type(torch.FloatTensor).to(DEVICE)
+        curr_states, next_states, rewards, actions, dones \
+            = training_context.random_sample_transformed(self.sample_size, DEVICE)
 
         curr_value = self.value_network.forward(curr_states).view(-1)
         next_value = self.target_value_network.forward(next_states).view(-1)
