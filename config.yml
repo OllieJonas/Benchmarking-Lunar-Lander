@@ -41,3 +41,5 @@ agents:
     nn_initial_weights: 0.0003
     actor_noise: 0.000001
     no_hidden_neurons: 256
+  dqn:
+    foo: "bar"

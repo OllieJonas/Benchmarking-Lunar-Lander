@@ -11,6 +11,7 @@ from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
 from agents.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
+from agents.dqn import DeepQNetwork
 from orchestrator import Orchestrator
 
 LOGGER: logging.Logger
@@ -57,6 +58,8 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
         return DdpgAgent(logger, action_space, cfg)
     elif name == "sac":
         return SoftActorCritic(logger, action_space, observation_space, cfg)
+    elif name == "dqn":
+        return DeepQNetwork(logger, action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
