@@ -7,6 +7,7 @@ import util
 
 from agents.random import RandomAgent
 from agents.ddpg import DdpgAgent
+from agents.sarsa import SarsaAgent
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
 
@@ -14,8 +15,8 @@ LOGGER: logging.Logger
 
 
 def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, continuous=True, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
-        else gym.make(env_name, continuous=True, render_mode="human")
+    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+        else gym.make(env_name,  render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -47,6 +48,8 @@ def get_agent(name: str, action_space, observation_space, agents_config):
 
     if name == "random":
         return RandomAgent(logger, action_space, cfg)
+    elif name == "sarsa":
+        return SarsaAgent(logger, action_space, observation_space, cfg)
     elif name == "ddpg":
         return DdpgAgent(logger, action_space, cfg)
     else:
