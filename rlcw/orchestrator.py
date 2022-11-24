@@ -94,10 +94,14 @@ class Runner:
         self.start_training_timesteps = start_training_timesteps
         self.training_ctx_capacity = training_ctx_capacity
 
-        self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
+        self.results = Results(agent_name=agent.name(),
+                               date_time=util.CURR_DATE_TIME)
 
     def run(self):
         state, info = self.env.reset()
+
+        # training_ctx_capacity = 64
+        # max number of time-steps allowed in training_context
         training_context = ReplayBuffer(self.training_ctx_capacity)
 
         print(self.env.observation_space)
@@ -114,7 +118,8 @@ class Runner:
                 break
 
             action = self.agent.get_action(state)
-            next_state, reward, terminated, truncated, info = self.env.step(action)
+            next_state, reward, terminated, truncated, info = self.env.step(
+                action)
 
             # render
             if self.should_render:
@@ -137,11 +142,14 @@ class Runner:
 
             state = next_state
 
-            timestep_result = Results.Timestep(state=state, action=action, reward=reward)
-            summary = self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+            timestep_result = Results.Timestep(
+                state=state, action=action, reward=reward)
+            summary = self.results.add(
+                curr_episode, timestep_result, curr_episode in self.episodes_to_save)
 
             if summary is not None:
-                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
+                self.LOGGER.info(
+                    f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
 
             # self.LOGGER.debug(timestep_result)
 
@@ -193,11 +201,13 @@ class Results:
             return None
         else:
             if store_detailed:
-                self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
+                self.results_detailed[episode] = [t.clone()
+                                                  for t in self.timestep_buffer]
 
             self.curr_episode = episode
 
-            rewards = np.fromiter(map(lambda t: t.reward, self.timestep_buffer), dtype=float)
+            rewards = np.fromiter(
+                map(lambda t: t.reward, self.timestep_buffer), dtype=float)
             cumulative = np.sum(rewards)
             avg = np.average(rewards)
             no_timesteps = rewards.size

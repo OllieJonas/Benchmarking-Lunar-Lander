@@ -1,7 +1,6 @@
-import random
 import os
 import numpy as np
-from typing import NoReturn, List
+from typing import List
 from agents.abstract_agent import CheckpointedAbstractAgent
 
 import torch as T
@@ -60,14 +59,6 @@ class DdpgAgent(CheckpointedAbstractAgent):
     def name(self):
         return "ddpg"
 
-    # returns the action for agent to do at beginning of each time-step
-    # def get_action(self, state):
-    #    return super().get_action(state)
-
-    # called when time-step to start training is reached
-    # def train(self, training_context: List) -> NoReturn:
-    #    return super().train(training_context)
-
     def get_action(self, observation):
         self.actor.eval()
         observation = T.tensor(
@@ -76,12 +67,12 @@ class DdpgAgent(CheckpointedAbstractAgent):
         mu_prime = mu + T.tensor(self.noise(),
                                  dtype=T.float).to(self.actor.device)
         self.actor.train()
-        action = mu_prime.cpu().detach().numpy()
-        return action
+        return mu_prime.cpu().detach().numpy()
 
     def train(self, training_context):
         if self.sample_size >= self.batch_size:
-            raise ValueError(f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
+            raise ValueError(
+                f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
         if self._batch_cnt <= self.batch_size:
             self._batch_cnt += 1
         else:
@@ -90,12 +81,16 @@ class DdpgAgent(CheckpointedAbstractAgent):
 
     def _do_train(self, training_context):
         random_sample = training_context.random_sample(self.batch_size)
-        state, new_state, reward, action, done = [np.asarray(x) for x in zip(*random_sample)]
+        state, new_state, reward, action, done = [
+            np.asarray(x) for x in zip(*random_sample)]
 
         state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
-        new_state = T.from_numpy(new_state).type(T.FloatTensor).to(self.critic.device)
-        reward = T.from_numpy(reward).type(T.FloatTensor).to(self.critic.device)
-        action = T.from_numpy(action).type(T.FloatTensor).to(self.critic.device)
+        new_state = T.from_numpy(new_state).type(
+            T.FloatTensor).to(self.critic.device)
+        reward = T.from_numpy(reward).type(
+            T.FloatTensor).to(self.critic.device)
+        action = T.from_numpy(action).type(
+            T.FloatTensor).to(self.critic.device)
         done = T.from_numpy(done).type(T.FloatTensor).to(self.critic.device)
 
         self.target_actor.eval()
@@ -149,13 +144,13 @@ class DdpgAgent(CheckpointedAbstractAgent):
 
         for name in critic_state_dict:
             critic_state_dict[name] = tau * critic_state_dict[name].clone() + \
-                                      (1 - tau) * target_critic_dict[name].clone()
+                (1 - tau) * target_critic_dict[name].clone()
 
         self.target_critic.load_state_dict(critic_state_dict)
 
         for name in actor_state_dict:
             actor_state_dict[name] = tau * actor_state_dict[name].clone() + \
-                                     (1 - tau) * target_actor_dict[name].clone()
+                (1 - tau) * target_actor_dict[name].clone()
         self.target_actor.load_state_dict(actor_state_dict)
 
         """
@@ -217,7 +212,8 @@ class ActionNoise(object):
     # overrides call function, removes need for obj.meth(), can just use meth()
     def __call__(self):
         x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
-            self.sigma + np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+            self.sigma + np.sqrt(self.dt) * \
+            np.random.normal(size=self.mu.shape)
         self.x_prev = x
         return x
 

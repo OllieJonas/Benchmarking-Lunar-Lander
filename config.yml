@@ -1,21 +1,21 @@
 overall:
   agent_name: "ddpg"
   env_name: "LunarLander-v2"
-  context_capacity: 64
+  context_capacity: 1000000
   output:
     verbose: true
     render: false
     save:
-      episodes: 5
+      episodes: 200
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 2
+    max: 1000
   timesteps:
     max: 1000000000000000
-    start_training: 50
+    start_training: 0
 agents:
   random:
     foo: "bar"
