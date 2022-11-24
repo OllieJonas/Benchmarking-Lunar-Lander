@@ -4,12 +4,13 @@ import numpy as np
 class ReplayBuffer(object):
     def __init__(self, max_capacity):
         self.max_capacity = max_capacity
+        self.input_dims = [8]
         self.mem_center = 0
-        self.state_memory = np.zeros((self.mem_size, *[8]))
-        self.new_state_memory = np.zeros((self.mem_size, *[8]))
-        self.action_memory = np.zeros((self.mem_size, 2))
-        self.reward_memory = np.zeros(self.mem_size)
-        self.terminal_memory = np.zeros(self.mem_size, dtype=np.float32)
+        self.state_memory = np.zeros((self.max_capacity, *self.input_dims))
+        self.new_state_memory = np.zeros((self.max_capacity, *self.input_dims))
+        self.action_memory = np.zeros((self.max_capacity, 2))
+        self.reward_memory = np.zeros(self.max_capacity)
+        self.terminal_memory = np.zeros(self.max_capacity, dtype=np.float32)
 
     def add(self, item):
         index = self.mem_center % self.max_capacity
@@ -30,7 +31,14 @@ class ReplayBuffer(object):
         states_ = self.new_state_memory[batch]
         terminal = self.terminal_memory[batch]
 
-        return states, actions, rewards, states_, terminal
+        sample = [
+            states,
+            states_,
+            rewards,
+            actions,
+            terminal]
+
+        return sample
 
     def flush(self):
         self.buffer = self._empty_buff()

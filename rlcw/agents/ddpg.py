@@ -75,23 +75,25 @@ class DdpgAgent(CheckpointedAbstractAgent):
                 f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
         if self._batch_cnt <= self.batch_size:
             self._batch_cnt += 1
+            self._do_train(training_context)
         else:
             self._do_train(training_context)
             self._batch_cnt = 0
 
     def _do_train(self, training_context):
         random_sample = training_context.random_sample(self.batch_size)
-        state, new_state, reward, action, done = [
-            np.asarray(x) for x in zip(*random_sample)]
 
-        state = T.from_numpy(state).type(T.FloatTensor).to(self.critic.device)
-        new_state = T.from_numpy(new_state).type(
-            T.FloatTensor).to(self.critic.device)
-        reward = T.from_numpy(reward).type(
-            T.FloatTensor).to(self.critic.device)
-        action = T.from_numpy(action).type(
-            T.FloatTensor).to(self.critic.device)
-        done = T.from_numpy(done).type(T.FloatTensor).to(self.critic.device)
+        state = random_sample[0]
+        new_state = random_sample[1]
+        reward = random_sample[2]
+        action = random_sample[3]
+        done = random_sample[4]
+
+        reward = T.tensor(reward, dtype=T.float).to(self.critic.device)
+        done = T.tensor(done).to(self.critic.device)
+        new_state = T.tensor(new_state, dtype=T.float).to(self.critic.device)
+        action = T.tensor(action, dtype=T.float).to(self.critic.device)
+        state = T.tensor(state, dtype=T.float).to(self.critic.device)
 
         self.target_actor.eval()
         self.target_critic.eval()
@@ -153,8 +155,7 @@ class DdpgAgent(CheckpointedAbstractAgent):
                 (1 - tau) * target_actor_dict[name].clone()
         self.target_actor.load_state_dict(actor_state_dict)
 
-        """
-        #Verify that the copy assignment worked correctly
+        # Verify that the copy assignment worked correctly
         target_actor_params = self.target_actor.named_parameters()
         target_critic_params = self.target_critic.named_parameters()
         critic_state_dict = dict(target_critic_params)
@@ -166,7 +167,6 @@ class DdpgAgent(CheckpointedAbstractAgent):
         for name, param in self.critic.named_parameters():
             print(name, T.equal(param, critic_state_dict[name]))
         input()
-        """
 
     def save_models(self):
         self.actor.save_checkpoint()
