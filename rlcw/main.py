@@ -32,7 +32,7 @@ def main():
     env, agent, config, episodes_to_save = setup()
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
     orchestrator = Orchestrator(
-        env=env, config=config, episodes_to_save=episodes_to_save)
+        env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
 
 
