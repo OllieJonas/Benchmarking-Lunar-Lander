@@ -52,13 +52,29 @@ class Orchestrator:
                              training_ctx_capacity=self.training_ctx_capacity)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.runner.run()
-        # self.time_taken = end - start
-        # self.LOGGER.info(f'Time Taken: {self.time_taken}')
+        self.scores = self.runner.run()
         self.env.close()
+        self.save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
+                                self.scores, "Episode", "Reward")
 
-        if self.should_save_raw:
-            self.results.save_to_disk()
+    def save_plot_as_image(self, name, title, data, x_label, y_label):
+
+        print("\n\n")
+        print(data)
+        print("\n\n")
+        print(len(data))
+        num_eps = len(data)
+        x = [i for i in range(num_eps)]
+
+        file_name = f'{util.get_curr_session_output_path()}results/png/{name}{"" if name.endswith(".png") else ".png"}'
+
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.plot(x, data)
+
+        plt.savefig(file_name)
+        plt.close()
 
     def eval(self):
         self.evaluator = eval.Evaluator(self.scores, self.results, self.should_save_charts, self.should_save_csv,
@@ -85,6 +101,8 @@ class Runner:
         self.seed = seed
 
         self.score_history = []
+
+        self.plot_score = []
 
         self.episodes_to_save = episodes_to_save
         self.should_render = should_render
@@ -136,3 +154,6 @@ class Runner:
 
             print('episode ', t, 'score %.2f' % score,
                   'trailing 100 games avg %.3f' % np.mean(self.score_history[-100:]))
+            self.plot_score.append(score)
+
+        return self.plot_score
