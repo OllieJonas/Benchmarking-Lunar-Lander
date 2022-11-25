@@ -20,7 +20,7 @@ class AbstractAgent(ABC):
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
     @abstractmethod
-    def train(self, training_context: ReplayBuffer) -> NoReturn:
+    def train(self, training_context) -> NoReturn:
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
 
