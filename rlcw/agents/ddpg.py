@@ -28,9 +28,10 @@ class DdpgAgent(CheckpointedAbstractAgent):
         self.layer2_size = config['layer2_size']
         self.n_actions = config['n_actions']
         self.max_size = config['max_size']
-        self.sample_size = 16
+        self.sample_size = 64
+        self.max_size = 1000000
 
-        self._batch_cnt = 0
+        self.memory = ReplayBuffer(self.max_size)
 
         self.actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
                                   self.layer2_size, n_actions=self.n_actions,
@@ -59,6 +60,9 @@ class DdpgAgent(CheckpointedAbstractAgent):
     def name(self):
         return "ddpg"
 
+    def store_memory(self, state, action, reward, new_state, done):
+        self.memory.store_transition(state, action, reward, new_state, done)
+
     def get_action(self, observation):
         self.actor.eval()
         observation = T.tensor(
@@ -70,24 +74,10 @@ class DdpgAgent(CheckpointedAbstractAgent):
         return mu_prime.cpu().detach().numpy()
 
     def train(self, training_context):
-        if self.sample_size >= self.batch_size:
-            raise ValueError(
-                f"sample size {self.sample_size} is greater than batch size {self.batch_size}!")
-        if self._batch_cnt <= self.batch_size:
-            self._batch_cnt += 1
-            self._do_train(training_context)
-        else:
-            self._do_train(training_context)
-            self._batch_cnt = 0
-
-    def _do_train(self, training_context):
-        random_sample = training_context.random_sample(self.batch_size)
-
-        state = random_sample[0]
-        new_state = random_sample[1]
-        reward = random_sample[2]
-        action = random_sample[3]
-        done = random_sample[4]
+        if self.memory.mem_center < self.batch_size:
+            return
+        state, action, reward, next_state, done = self.memory.sample_buffer(
+            self.batch_size)
 
         reward = T.tensor(reward, dtype=T.float).to(self.critic.device)
         done = T.tensor(done).to(self.critic.device)
@@ -103,30 +93,25 @@ class DdpgAgent(CheckpointedAbstractAgent):
         critic_value = self.critic.forward(state, action)
 
         target = []
-
         for j in range(self.batch_size):
-            _reward = reward[j]
-            _critic_value_ = critic_value_[j]
-            _done = done[j]
-            target.append(_reward + self.gamma * _critic_value_ * _done)
-
+            target.append(reward[j] + self.gamma*critic_value_[j]*done[j])
         target = T.tensor(target).to(self.critic.device)
         target = target.view(self.batch_size, 1)
 
         self.critic.train()
-        self.critic.optimiser.zero_grad()
+        self.critic.optimizer.zero_grad()
         critic_loss = F.mse_loss(target, critic_value)
         critic_loss.backward()
-        self.critic.optimiser.step()
+        self.critic.optimizer.step()
 
         self.critic.eval()
-        self.actor.optimiser.zero_grad()
+        self.actor.optimizer.zero_grad()
         mu = self.actor.forward(state)
         self.actor.train()
         actor_loss = -self.critic.forward(state, mu)
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
-        self.actor.optimiser.step()
+        self.actor.optimizer.step()
 
         self.update_network_parameters()
 
@@ -331,3 +316,37 @@ class ActorNetwork(nn.Module):
     def load_checkpoint(self):
         print("... loading checkpoint ...")
         self.load_state_dict(T.load(self.checkpoint_file))
+
+
+class ReplayBuffer(object):
+    def __init__(self, max_size):
+        self.max_cap = max_size
+        self.input_dims = [8]
+        self.mem_center = 0
+        self.state_memory = np.zeros((self.max_cap, *self.input_dims))
+        self.new_state_memory = np.zeros((self.max_cap, *self.input_dims))
+        self.action_memory = np.zeros((self.max_cap, 2))
+        self.reward_memory = np.zeros(self.max_cap)
+        self.terminal_memory = np.zeros(self.max_cap, dtype=np.float32)
+
+    def store_transition(self, state, action, reward, state_, done):
+        index = self.mem_center % self.max_cap
+        self.state_memory[index] = state
+        self.new_state_memory[index] = state_
+        self.action_memory[index] = action
+        self.reward_memory[index] = reward
+        self.terminal_memory[index] = 1 - done
+        self.mem_center += 1
+
+    def sample_buffer(self, batch_size):
+        max_mem = min(self.mem_center, self.max_cap)
+
+        batch = np.random.choice(max_mem, batch_size)
+
+        states = self.state_memory[batch]
+        actions = self.action_memory[batch]
+        rewards = self.reward_memory[batch]
+        states_ = self.new_state_memory[batch]
+        terminal = self.terminal_memory[batch]
+
+        return states, actions, rewards, states_, terminal

@@ -5,7 +5,6 @@ from IPython import display
 
 import util
 from agents.abstract_agent import AbstractAgent
-from replay_buffer import ReplayBuffer
 
 
 class Orchestrator:
@@ -106,25 +105,22 @@ class Runner:
         self.training_ctx_capacity = training_ctx_capacity
 
     def run(self):
-        # training_ctx_capacity = 64
-        # max number of time-steps allowed in training_context
-        training_context = ReplayBuffer(self.training_ctx_capacity)
-
-        print(self.env.observation_space)
-
-        curr_episode = 0
-
         for t in range(self.max_episodes):
 
             state, info = self.env.reset()
             done = False
             score = 0
 
+            name = self.agent.name()
+
             while not done:
                 action = self.agent.get_action(state)
                 next_state, reward, terminated, truncated, info = self.env.step(
                     action)
-                score += reward
+
+                if name == "ddpg":
+                    self.agent.store_memory(
+                        state, action, reward, next_state, done)
 
                 if terminated or truncated:
                     done = True
@@ -133,18 +129,11 @@ class Runner:
                 if self.should_render:
                     self.env.render()
 
-                training_context.add(np.array([
-                    state,
-                    next_state,
-                    reward,
-                    action,
-                    done], dtype=object))
-
                 if t > self.start_training_timesteps:
-                    self.agent.train(training_context)
+                    self.agent.train(None)
 
+                score += reward
                 state = next_state
-
                 self.score_history.append(score)
 
             print('episode ', t, 'score %.2f' % score,
