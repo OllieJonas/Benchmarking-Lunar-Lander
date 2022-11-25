@@ -2,10 +2,8 @@ import random
 
 from typing import NoReturn, List
 
-from agents.abstract_agent import AbstractAgent
 
-
-class RandomAgent(AbstractAgent):
+class RandomAgent():
 
     def __init__(self, logger, action_space, config):
         super().__init__(logger, action_space, config)

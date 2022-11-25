@@ -1,6 +1,6 @@
 overall:
   agent_name: "ddpg"
-  env_name: "LunarLander-v2"
+  env_name: "LunarLanderContinuous-v2"
   context_capacity: 1000000
   output:
     verbose: true

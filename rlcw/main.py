@@ -5,7 +5,6 @@ import torch
 import yaml
 import util
 
-from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.ddpg import DdpgAgent
 from orchestrator import Orchestrator
@@ -36,7 +35,7 @@ def main():
     orchestrator.run()
 
 
-def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, observation_space, agents_config):
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
