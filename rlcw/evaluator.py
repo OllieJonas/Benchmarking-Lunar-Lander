@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 import util as util
+from utils import plotLearning
 
 
 def _get_csv_file_path(name):
@@ -27,19 +28,25 @@ def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=F
 
 
 class Evaluator:
-    def __init__(self, results, should_save_charts, should_save_csv, agent_name: str = ""):
+    def __init__(self, scores, results, should_save_charts, should_save_csv, agent_name: str = ""):
         self.LOGGER = util.init_logger("Evaluator")
 
         self.results = results
         self.should_save_charts = should_save_charts
         self.should_save_csv = should_save_csv
+        self.scores = scores
 
         self.agent_name = agent_name
 
     def eval(self):
+        self.fras_results()
         self._eval_non_detailed()
         self._eval_detailed()
         return self.results
+
+    def fras_results(self):
+        filename = 'LunarLander-alpha000025-beta00025-400-300.png'
+        plotLearning(self.scores, filename, window=100)
 
     def _eval_non_detailed(self):
         cumulative_rewards = [x[0] for x in self.results.results]
@@ -66,7 +73,8 @@ class Evaluator:
             no_timesteps = ["No Timesteps"] + no_timesteps
 
             np.savetxt(_get_csv_file_path("results.csv"),
-                       [_ for _ in zip(cumulative_rewards, average_rewards, no_timesteps)],
+                       [_ for _ in zip(cumulative_rewards,
+                                       average_rewards, no_timesteps)],
                        delimiter=', ',
                        fmt="%s")
 
@@ -89,7 +97,7 @@ class Evaluator:
                 rewards = ["Reward"] + [t.reward for t in v]
 
                 np.savetxt(_get_csv_file_path(name),
-                           [_ for _ in zip(timesteps, states, actions, rewards)],
+                           [_ for _ in zip(timesteps, states,
+                                           actions, rewards)],
                            delimiter=', ',
                            fmt="%s")
-

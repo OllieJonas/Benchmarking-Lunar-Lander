@@ -98,7 +98,8 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     if not torch.cuda.is_available():
-        LOGGER.warning("CUDA is not available for Torch - Please check your installation!")
+        LOGGER.warning(
+            "CUDA is not available for Torch - Please check your installation!")
     else:
         LOGGER.info("CUDA is enabled!")
 
@@ -110,7 +111,8 @@ def setup():
         max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
+    agent = get_agent(agent_name, env.action_space,
+                      env.observation_space, config["agents"])
 
     return env, agent, config, save_partitions
 

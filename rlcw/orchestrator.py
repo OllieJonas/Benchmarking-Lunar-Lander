@@ -36,6 +36,8 @@ class Orchestrator:
         self.time_taken = 0.
         self.results = None
 
+        self.scores = []
+
         # eval stuff
         self.should_save_charts = _save_cfg["charts"]
         self.should_save_csv = _save_cfg["csv"]
@@ -54,7 +56,7 @@ class Orchestrator:
                              training_ctx_capacity=self.training_ctx_capacity)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.results = self.runner.run()
+        self.results, self.scores = self.runner.run()
         # self.time_taken = end - start
         # self.LOGGER.info(f'Time Taken: {self.time_taken}')
         self.env.close()
@@ -63,7 +65,7 @@ class Orchestrator:
             self.results.save_to_disk()
 
     def eval(self):
-        self.evaluator = eval.Evaluator(self.results, self.should_save_charts, self.should_save_csv,
+        self.evaluator = eval.Evaluator(self.scores, self.results, self.should_save_charts, self.should_save_csv,
                                         agent_name=self.agent.name())
         self.evaluator.eval()
 
@@ -86,6 +88,8 @@ class Runner:
         self.env = env
         self.agent = agent
         self.seed = seed
+
+        self.score = []
 
         self.episodes_to_save = episodes_to_save
         self.should_render = should_render
@@ -120,6 +124,8 @@ class Runner:
             action = self.agent.get_action(state)
             next_state, reward, terminated, truncated, info = self.env.step(
                 action)
+
+            self.score.append(reward)
 
             # render
             if self.should_render:
@@ -160,7 +166,7 @@ class Runner:
             if truncated:
                 state, info = self.env.reset()
 
-        return self.results
+        return self.results, self.score
 
 
 class Results:
@@ -194,6 +200,9 @@ class Results:
 
     def __repr__(self):
         return self.results.__str__()
+
+    def save_score(self, reward):
+        self.score.append(reward)
 
     def add(self, episode: int, timestep: Timestep, store_detailed: bool):
         if episode == self.curr_episode:

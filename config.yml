@@ -6,13 +6,13 @@ overall:
     verbose: true
     render: false
     save:
-      episodes: 200
+      episodes: 10
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 1000
+    max: 100
   timesteps:
     max: 1000000000000000
     start_training: 0
