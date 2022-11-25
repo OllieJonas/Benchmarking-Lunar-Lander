@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from IPython import display
 
-import evaluator as eval
 import util
 from agents.abstract_agent import AbstractAgent
 from replay_buffer import ReplayBuffer
@@ -11,13 +10,12 @@ from replay_buffer import ReplayBuffer
 
 class Orchestrator:
 
-    def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
+    def __init__(self, env, agent: AbstractAgent, config, seed: int = 42):
         self.LOGGER = util.init_logger("Orchestrator")
 
         self.env = env
         self.agent = agent
         self.config = config
-        self.episodes_to_save = episodes_to_save
         self.seed = seed
 
         _save_cfg = config["overall"]["output"]["save"]
@@ -27,8 +25,6 @@ class Orchestrator:
         self.should_save_raw = _save_cfg["raw"]
 
         self.max_episodes = config["overall"]["episodes"]["max"]
-
-        self.max_timesteps = config["overall"]["timesteps"]["max"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
 
@@ -50,7 +46,6 @@ class Orchestrator:
         self.runner = Runner(self.env, self.agent, self.seed,
                              episodes_to_save=self.episodes_to_save,
                              should_render=self.should_render,
-                             max_timesteps=self.max_timesteps,
                              max_episodes=self.max_episodes,
                              start_training_timesteps=self.start_training_timesteps,
                              training_ctx_capacity=self.training_ctx_capacity)
@@ -91,6 +86,8 @@ class Runner:
 
         self.score = []
 
+        self.score_history = []
+
         self.episodes_to_save = episodes_to_save
         self.should_render = should_render
         self.max_timesteps = max_timesteps
@@ -102,8 +99,6 @@ class Runner:
                                date_time=util.CURR_DATE_TIME)
 
     def run(self):
-        state, info = self.env.reset()
-
         # training_ctx_capacity = 64
         # max number of time-steps allowed in training_context
         training_context = ReplayBuffer(self.training_ctx_capacity)
@@ -112,59 +107,44 @@ class Runner:
 
         curr_episode = 0
 
-        is_using_jupyter = util.is_using_jupyter()
-
         # display
-        image = plt.imshow(self.env.render()) if is_using_jupyter else None
+        image = plt.imshow(self.env.render())
 
-        for t in range(self.max_timesteps):
-            if curr_episode > self.max_episodes:
-                break
+        for t in range(self.max_episodes):
 
-            action = self.agent.get_action(state)
-            next_state, reward, terminated, truncated, info = self.env.step(
-                action)
+            state, info = self.env.reset()
+            done = False
+            score = 0
 
-            self.score.append(reward)
+            while not done:
+                action = self.agent.get_action(state)
+                next_state, reward, terminated, truncated, info = self.env.step(
+                    action)
+                score += reward
 
-            # render
-            if self.should_render:
-                if is_using_jupyter:
-                    image.set_data(self.env.render())
-                    display.display(plt.gcf())
-                    display.clear_output(wait=True)
-                else:
+                # render
+                if self.should_render:
                     self.env.render()
 
-            training_context.add(np.array([
-                state,
-                next_state,
-                reward,
-                action,
-                terminated], dtype=object))
+                training_context.add(np.array([
+                    state,
+                    next_state,
+                    reward,
+                    action,
+                    terminated], dtype=object))
 
-            if t > self.start_training_timesteps:
-                self.agent.train(training_context)
+                if t > self.start_training_timesteps:
+                    self.agent.train(training_context)
 
-            state = next_state
+                state = next_state
 
-            timestep_result = Results.Timestep(
-                state=state, action=action, reward=reward)
-            summary = self.results.add(
-                curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+                # my score info
+                self.score_history.append(score)
 
-            if summary is not None:
-                self.LOGGER.info(
-                    f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
-
-            # self.LOGGER.debug(timestep_result)
-
-            if terminated:
-                curr_episode += 1
-                state, info = self.env.reset()
-
-            if truncated:
-                state, info = self.env.reset()
+                timestep_result = Results.Timestep(
+                    state=state, action=action, reward=reward)
+                summary = self.results.add(
+                    curr_episode, timestep_result, curr_episode in self.episodes_to_save)
 
         return self.results, self.score
 

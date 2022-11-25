@@ -7,9 +7,7 @@ import util
 
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
-from agents.sarsa import SarsaAgent
 from agents.ddpg import DdpgAgent
-from agents.sac import SoftActorCritic
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
 
@@ -34,9 +32,8 @@ def main():
     env, agent, config, episodes_to_save = setup()
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
     orchestrator = Orchestrator(
-        env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
+        env=env, config=config, episodes_to_save=episodes_to_save)
     orchestrator.run()
-    orchestrator.eval()
 
 
 def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
@@ -51,18 +48,10 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
 
     if name == "random":
         return RandomAgent(logger, action_space, cfg)
-    elif name == "sarsa":
-        return SarsaAgent(logger, action_space, cfg)
     elif name == "ddpg":
         return DdpgAgent(logger, action_space, cfg)
-    elif name == "sac":
-        return SoftActorCritic(logger, action_space, observation_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
-
-
-def is_using_jupyter():
-    return util.is_using_jupyter()
 
 
 def setup():
@@ -124,13 +113,9 @@ def _make_dirs(config, agent_name):
     session_path = util.get_curr_session_output_path()
     util.make_dir(session_path)
 
-    policies_path = f'{session_path}policies/'
-    util.make_dir(policies_path)
-
     results_path = f'{session_path}results/'
     png_path = f'{results_path}png/'
     raw_path = f'{results_path}raw/'
-    csv_path = f'{results_path}csv/'
     recordings_path = f'{results_path}recordings/'
 
     util.make_dir(results_path)
@@ -140,9 +125,6 @@ def _make_dirs(config, agent_name):
 
     if save_cfg["raw"]:
         util.make_dir(raw_path)
-
-    if save_cfg["csv"]:
-        util.make_dir(csv_path)
 
     if save_cfg["recordings"]:
         util.make_dir(recordings_path)
