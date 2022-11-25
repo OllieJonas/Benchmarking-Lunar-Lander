@@ -58,7 +58,6 @@ class Orchestrator:
                                 self.scores, "Episode", "Reward")
 
     def save_plot_as_image(self, name, title, data, x_label, y_label):
-        print(len(data))
         num_eps = len(data)
         x = [i for i in range(num_eps)]
 

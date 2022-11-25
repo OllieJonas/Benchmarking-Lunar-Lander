@@ -4,15 +4,15 @@ overall:
   context_capacity: 1000000
   output:
     verbose: true
-    render: true
+    render: false
     save:
-      episodes: 2
+      episodes: 20
       csv: true
       charts: true
       raw: false
-      recordings: false
+      recordings: true
   episodes:
-    max: 5
+    max: 1000
   timesteps:
     max: 1000000000000000
     start_training: 0
