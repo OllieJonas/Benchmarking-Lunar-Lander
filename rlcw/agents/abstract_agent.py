@@ -1,6 +1,5 @@
 from typing import NoReturn
 from abc import abstractmethod, ABC
-from replay_buffer import ReplayBuffer
 
 NOT_IMPLEMENTED_MESSAGE = "This hasn't been implemented yet! :("
 
