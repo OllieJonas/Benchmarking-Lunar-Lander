@@ -75,9 +75,39 @@ class Orchestrator:
             self.run_td3()
 
     def run_td3(self):
+        best_score = self.env.reward_range[0]
+        self.score_history = []
+        self.agent.load_models()
         for t in range(self.max_episodes):
-            pass
-        return
+            state, info = self.env.reset()
+            done = False
+            score = 0
+            while not done:
+                action = self.agent.get_action(state)
+                next_state, reward, terminated, truncated, info = self.env.step(
+                    action)
+                self.agent.store_memory(
+                    state, action, reward, next_state, int(done))
+
+                if terminated or truncated:
+                    done = True
+
+                # render
+                if self.should_render:
+                    self.env.render()
+
+                self.agent.train()
+                score += reward
+                state = next_state
+            self.score_history.append(score)
+            avg_score = np.mean(self.score_history[-100:])
+
+            if avg_score > best_score:
+                best_score = avg_score
+                self.agent.save_models()
+
+            print('episode ', i, 'score %.1f' % score,
+                  'average score %.1f' % avg_score)
 
     def run_ddpg(self):
         for t in range(self.max_episodes):
