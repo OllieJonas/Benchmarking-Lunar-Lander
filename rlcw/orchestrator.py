@@ -93,7 +93,7 @@ class Orchestrator:
                 if self.should_render:
                     self.env.render()
 
-                self.agent.train(None)
+                self.agent.train()
 
                 score += reward
                 state = next_state

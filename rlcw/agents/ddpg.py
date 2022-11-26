@@ -70,7 +70,7 @@ class DdpgAgent():
         self.actor.train()
         return mu_prime.cpu().detach().numpy()
 
-    def train(self, training_context):
+    def train(self):
         if self.memory.mem_center < self.batch_size:
             return
         state, action, reward, new_state, done = self.memory.sample_buffer(

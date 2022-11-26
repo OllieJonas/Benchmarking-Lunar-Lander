@@ -30,6 +30,13 @@ agents:
     layer2_size: 300
     n_actions: 2
     max_size: 100000
+  td3:
+    alpha: 0.001
+    beta: 0.001
+    input_dims: [8]
+    tau: 0.005
+    batch_size: 100
+    n_actions: 2
   sac:
     sample_size: 50
     batch_size: 64

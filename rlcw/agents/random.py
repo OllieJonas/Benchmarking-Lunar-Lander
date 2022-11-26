@@ -17,5 +17,5 @@ class RandomAgent():
     def get_action(self, state):
         return random.choice(range(self.action_space.n))
 
-    def train(self, training_context: List) -> NoReturn:
+    def train(self):
         pass
