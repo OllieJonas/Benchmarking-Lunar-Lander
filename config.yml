@@ -14,7 +14,7 @@ overall:
   episodes:
     max: 1000
   timesteps:
-    max: 1000000000000000
+    max: 4000
     start_training: 0
 agents:
   random:
@@ -29,7 +29,7 @@ agents:
     layer1_size: 400
     layer2_size: 300
     n_actions: 2
-    max_size: 1000000
+    max_size: 100000
   sac:
     sample_size: 50
     batch_size: 64

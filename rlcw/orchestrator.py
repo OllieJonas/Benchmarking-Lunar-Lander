@@ -21,6 +21,7 @@ class Orchestrator:
         # runner stuff
         self.should_render = config["overall"]["output"]["render"]
         self.should_save_raw = _save_cfg["raw"]
+        self.max_timesteps = config["overall"]["timesteps"]["max"]
 
         self.max_episodes = config["overall"]["episodes"]["max"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
@@ -32,6 +33,7 @@ class Orchestrator:
 
         self.scores = []
         self.score_history = []
+        self.plot_score = []
 
         # eval stuff
         self.should_save_charts = _save_cfg["charts"]
@@ -47,6 +49,8 @@ class Orchestrator:
         self.env.close()
         self.save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
                                 self.scores, "Episode", "Reward")
+        self.save_plot_as_image(f"past_100_eps_avg.png", "Average Reward over Passed 100 Episodes",
+                                self.plot_score, "Episode", "Reward")
 
     def save_plot_as_image(self, name, title, data, x_label, y_label):
         num_eps = len(data)
@@ -97,7 +101,9 @@ class Orchestrator:
                 state = next_state
 
             self.score_history.append(score)
+            avg_score = np.mean(self.score_history[-100:])
+            self.plot_score.append(avg_score)
             print('episode ', t, 'score %.2f' % score,
-                  'trailing 100 games avg %.3f' % np.mean(self.score_history[-100:]))
+                  'trailing 100 games avg %.3f' % avg_score)
 
         return self.score_history
