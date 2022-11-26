@@ -43,7 +43,7 @@ class Orchestrator:
 
     def run(self):
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.run_agent(self.agent.name)
+        self.run_agent()
         self.env.close()
         self.save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
                                 self.score_history, "Episode", "Reward")
@@ -68,11 +68,14 @@ class Orchestrator:
         np.random.seed(self.seed)
         torch.random.manual_seed(self.seed)
 
-    def run_agent(self, agent_name):
+    def run_agent(self):
+        agent_name = self.agent.name()
         if agent_name == "ddpg":
             self.run_ddpg()
         elif agent_name == "td3":
             self.run_td3()
+        else:
+            print("No agent with that name found")
 
     def run_td3(self):
         best_score = self.env.reward_range[0]

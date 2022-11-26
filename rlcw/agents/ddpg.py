@@ -27,22 +27,24 @@ class DdpgAgent():
         self.layer2_size = config['layer2_size']
         self.n_actions = config['n_actions']
         self.max_size = config['max_size']
+        self.chkpt_dir = config['chkpt_dir']
+        self.agent_suffix = config['agent_suffix']
 
         self.memory = ReplayBuffer(self.max_size)
 
         self.actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
                                   self.layer2_size, n_actions=self.n_actions,
-                                  name='Actor')
+                                  name='Actor', chkpt_dir=self.chkpt_dir, agent_suffix=self.agent_suffix)
         self.critic = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                     self.layer2_size, n_actions=self.n_actions,
-                                    name='Critic')
+                                    name='Critic', chkpt_dir=self.chkpt_dir, agent_suffix=self.agent_suffix)
 
         self.target_actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
                                          self.layer2_size, n_actions=self.n_actions,
-                                         name='TargetActor')
+                                         name='TargetActor', chkpt_dir=self.chkpt_dir, agent_suffix=self.agent_suffix)
         self.target_critic = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                            self.layer2_size, n_actions=self.n_actions,
-                                           name='TargetCritic')
+                                           name='TargetCritic', chkpt_dir=self.chkpt_dir, agent_suffix=self.agent_suffix)
 
         self.noise = ActionNoise(mu=np.zeros(self.n_actions))
 
