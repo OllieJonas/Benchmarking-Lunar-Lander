@@ -7,6 +7,7 @@ import util
 
 from agents.random import RandomAgent
 from agents.ddpg import DdpgAgent
+from agents.td3 import Td3Agent
 from orchestrator import Orchestrator
 from util import init_logger, make_dir, set_logger_level
 
@@ -49,6 +50,8 @@ def get_agent(name: str, action_space, observation_space, agents_config):
         return RandomAgent(logger, action_space, cfg)
     elif name == "ddpg":
         return DdpgAgent(logger, action_space, cfg)
+    elif name == "td3":
+        return Td3Agent(logger, action_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 

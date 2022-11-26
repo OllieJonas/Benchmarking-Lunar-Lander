@@ -106,7 +106,7 @@ class Orchestrator:
                 best_score = avg_score
                 self.agent.save_models()
 
-            print('episode ', i, 'score %.1f' % score,
+            print('episode ', t, 'score %.1f' % score,
                   'average score %.1f' % avg_score)
 
     def run_ddpg(self):
