@@ -39,8 +39,6 @@ class Orchestrator:
         self.should_save_charts = _save_cfg["charts"]
         self.should_save_csv = _save_cfg["csv"]
 
-        self.evaluator = None
-
         # self._sync_seeds()
 
     def run(self):

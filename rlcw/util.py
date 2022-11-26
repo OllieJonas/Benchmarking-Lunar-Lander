@@ -3,7 +3,6 @@ import os
 import sys
 import copy
 import torch
-import numpy as np
 
 from datetime import datetime
 
@@ -15,6 +14,7 @@ using_jupyter = False
 logger_level = logging.INFO
 
 # -------------------------------- FILES --------------------------------
+
 
 def with_file_extension(name, extension):
     extension = extension if extension.startswith(".") else f".{extension}"
@@ -63,13 +63,13 @@ def get_torch_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def is_using_jupyter():
-    return using_jupyter
-
-
 def set_using_jupyter(value: bool):
     global using_jupyter
     using_jupyter = value
+
+
+def is_using_jupyter():
+    return using_jupyter
 
 
 def set_agent_name(agent_name):
@@ -99,7 +99,8 @@ def init_logger(suffix: str = "") -> logging.Logger:
 
     handler = logging.StreamHandler(stream=sys.stdout)
 
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
     logger.addHandler(handler)
