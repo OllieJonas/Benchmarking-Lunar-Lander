@@ -43,10 +43,10 @@ class Orchestrator:
 
     def run(self):
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.scores = self.agent_run()
+        self.run_agent(self.agent.name)
         self.env.close()
         self.save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
-                                self.scores, "Episode", "Reward")
+                                self.score_history, "Episode", "Reward")
         self.save_plot_as_image(f"past_100_eps_avg.png", "Average Reward over Passed 100 Episodes",
                                 self.plot_score, "Episode", "Reward")
 
@@ -68,23 +68,31 @@ class Orchestrator:
         np.random.seed(self.seed)
         torch.random.manual_seed(self.seed)
 
-    def agent_run(self):
+    def run_agent(self, agent_name):
+        if agent_name == "ddpg":
+            self.run_ddpg()
+        elif agent_name == "td3":
+            self.run_td3()
+
+    def run_td3(self):
+        for t in range(self.max_episodes):
+            pass
+        return
+
+    def run_ddpg(self):
         for t in range(self.max_episodes):
 
             state, info = self.env.reset()
             done = False
             score = 0
 
-            name = self.agent.name()
-
             while not done:
                 action = self.agent.get_action(state)
                 next_state, reward, terminated, truncated, info = self.env.step(
                     action)
 
-                if name == "ddpg":
-                    self.agent.store_memory(
-                        state, action, reward, next_state, int(done))
+                self.agent.store_memory(
+                    state, action, reward, next_state, int(done))
 
                 if terminated or truncated:
                     done = True
@@ -103,5 +111,3 @@ class Orchestrator:
             self.plot_score.append(avg_score)
             print('episode ', t, 'score %.2f' % score,
                   'trailing 100 games avg %.3f' % avg_score)
-
-        return self.score_history
