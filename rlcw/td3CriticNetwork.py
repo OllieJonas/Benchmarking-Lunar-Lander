@@ -5,6 +5,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import util
 
+DEVICE = util.get_torch_device()
+
 
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions,
@@ -16,15 +18,17 @@ class CriticNetwork(nn.Module):
         self.n_actions = n_actions
         self.name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_td3')
+        self.checkpoint_file = os.path.join(
+            util.get_project_root_path() + "rlcw/" + self.checkpoint_dir, name+'_td3')
 
         self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.q1 = nn.Linear(self.fc2_dims, 1)
 
         self.optimiser = optim.Adam(self.parameters(), lr=beta)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        #self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
+        self.device = DEVICE
         self.to(self.device)
 
     def forward(self, state, action):
@@ -39,8 +43,8 @@ class CriticNetwork(nn.Module):
 
     def save_checkpoint(self):
         print('... saving checkpoint ...')
-        util.save_torch_nn(self, self.checkpoint_file)
+        T.save(self.state_dict(), self.checkpoint_file)
 
     def load_checkpoint(self):
         print('... loading checkpoint ...')
-        util.load_torch_nn(self, self.checkpoint_dir)
+        self.load_state_dict(T.load(self.checkpoint_file))

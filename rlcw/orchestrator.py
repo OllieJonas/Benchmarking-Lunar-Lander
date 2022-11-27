@@ -81,7 +81,7 @@ class Orchestrator:
         self.score_history = []
         time_step_history = []
 
-        # self.agent.load_models()
+        self.agent.load_models()
 
         for t in range(self.max_episodes):
             state, info = self.env.reset()
