@@ -8,16 +8,15 @@ import torch.optim as optim
 
 class CriticNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims, fc2_dims, n_actions, name,
-                 chkpt_dir, agent_suffix):
+                 chkpt_dir='tmp/ddpg'):
         super(CriticNetwork, self).__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.chkpt_dir = chkpt_dir
-        self.agent_suffix = agent_suffix
 
-        self.checkpoint_file = os.path.join(chkpt_dir, name+self.agent_suffix)
+        self.checkpoint_file = os.path.join(chkpt_dir, name+'_ddpg')
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         f1 = 1./np.sqrt(self.fc1.weight.data.size()[0])
         T.nn.init.uniform_(self.fc1.weight.data, -f1, f1)

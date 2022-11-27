@@ -30,8 +30,6 @@ agents:
     layer2_size: 300
     n_actions: 2
     max_size: 100000
-    chkpt_dir: "tmp/ddpg"
-    agent_suffix: "_ddpg"
   td3:
     alpha: 0.001
     beta: 0.001
@@ -44,8 +42,6 @@ agents:
     layer2_size: 300
     n_actions: 2
     max_size: 1000000
-    chkpt_dir: "tmp/td3"
-    agent_suffix: "_td3"
   sac:
     sample_size: 50
     batch_size: 64
