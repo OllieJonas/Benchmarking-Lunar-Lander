@@ -62,7 +62,7 @@ class Td3Agent():
                                                self.layer2_size, n_actions=self.n_actions,
                                                name='TargetCritic_Two', chkpt_dir=self.chkpt_dir, agent_suffix=self.agent_suffix)
 
-        self.noise = ActionNoise(mu=np.zeros(self.n_actions))
+        #self.noise = ActionNoise(mu=np.zeros(self.n_actions))
         self.noise = config["noise"]
 
         self.update_network_parameters(tau=1)
@@ -80,13 +80,18 @@ class Td3Agent():
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def get_action(self, observation):
-        self.actor.eval()
-        observation = T.tensor(
-            observation, dtype=T.float).to(self.actor.device)
-        mu = self.actor.forward(observation).to(self.actor.device)
-        mu_prime = mu + T.tensor(self.noise(),
+        if self.time_step < self.warmup:
+            mu = T.tensor(np.random.normal(scale=self.noise,
+                                           size=(self.n_actions,)))
+        else:
+            state = T.tensor(observation, dtype=T.float).to(self.actor.device)
+            mu = self.actor.forward(state).to(self.actor.device)
+        mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
                                  dtype=T.float).to(self.actor.device)
-        self.actor.train()
+
+        mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
+        self.time_step += 1
+
         return mu_prime.cpu().detach().numpy()
 
     def train(self):

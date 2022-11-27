@@ -38,7 +38,7 @@ agents:
     gamma: 0.99
     input_dims: [8]
     tau: 0.005
-    noise: 1000
+    noise: 0.1
     batch_size: 100
     layer1_size: 400
     layer2_size: 300

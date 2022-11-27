@@ -80,7 +80,9 @@ class Orchestrator:
     def run_td3(self):
         best_score = self.env.reward_range[0]
         self.score_history = []
-        self.agent.load_models()
+
+        # self.agent.load_models()
+
         for t in range(self.max_episodes):
             state, info = self.env.reset()
             done = False
