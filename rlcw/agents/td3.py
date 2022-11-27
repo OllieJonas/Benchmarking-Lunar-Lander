@@ -6,8 +6,8 @@ from typing import List
 import torch as T
 import torch.nn.functional as F
 
-from td3_classes.criticNetwork import CriticNetwork
-from td3_classes.actorNetwork import ActorNetwork
+from td3CriticNetwork import CriticNetwork
+from td3ActorNetwork import ActorNetwork
 from replayBuffer import ReplayBuffer
 
 
@@ -41,11 +41,11 @@ class Td3Agent():
 
         self.critic_one = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                         self.layer2_size, n_actions=self.n_actions,
-                                        name='Critic_One')
+                                        name='CriticOne')
 
         self.critic_two = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                         self.layer2_size, n_actions=self.n_actions,
-                                        name='Critic_Two')
+                                        name='CriticTwo')
 
         self.target_actor = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
                                          self.layer2_size, n_actions=self.n_actions,
@@ -53,11 +53,11 @@ class Td3Agent():
 
         self.target_critic_one = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                                self.layer2_size, n_actions=self.n_actions,
-                                               name='TargetCritic_One')
+                                               name='TargetCriticOne')
 
         self.target_critic_two = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                                self.layer2_size, n_actions=self.n_actions,
-                                               name='TargetCritic_Two')
+                                               name='TargetCriticTwo')
 
         #self.noise = ActionNoise(mu=np.zeros(self.n_actions))
         self.noise = config["noise"]
@@ -79,7 +79,7 @@ class Td3Agent():
     def get_action(self, observation):
         if self.time_step < self.warmup:
             mu = T.tensor(np.random.normal(scale=self.noise,
-                                           size=(self.n_actions,)))
+                                           size=(self.n_actions,))).to(self.actor.device)
         else:
             state = T.tensor(observation, dtype=T.float).to(self.actor.device)
             mu = self.actor.forward(state).to(self.actor.device)
@@ -115,8 +115,8 @@ class Td3Agent():
         q1 = self.critic_one.forward(state, action)
         q2 = self.critic_two.forward(state, action)
 
-        q1_[done] = 0.0
-        q2_[done] = 0.0
+        q1_[done.long()] = 0.0
+        q2_[done.long()] = 0.0
 
         q1_ = q1_.view(-1)
         q2_ = q2_.view(-1)

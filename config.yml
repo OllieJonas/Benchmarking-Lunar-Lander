@@ -1,18 +1,18 @@
 overall:
-  agent_name: "ddpg"
+  agent_name: "td3"
   env_name: "LunarLanderContinuous-v2"
   context_capacity: 1000000
   output:
     verbose: true
     render: true
     save:
-      episodes: 3
+      episodes: 10
       csv: true
       charts: true
       raw: false
       recordings: false
   episodes:
-    max: 3
+    max: 1000
   timesteps:
     max: 4000
     start_training: 0
