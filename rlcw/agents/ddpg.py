@@ -4,9 +4,9 @@ from typing import List
 import torch as T
 import torch.nn.functional as F
 
-from ..ddpg_classes.actionNoise import ActionNoise
-from ..ddpg_classes.criticNetwork import CriticNetwork
-from ..ddpg_classes.actorNetwork import ActorNetwork
+from ddpg_classes.actionNoise import ActionNoise
+from ddpg_classes.criticNetwork import CriticNetwork
+from ddpg_classes.actorNetwork import ActorNetwork
 from replayBuffer import ReplayBuffer
 
 # Code **inspired** by

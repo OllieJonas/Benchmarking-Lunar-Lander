@@ -1,5 +1,5 @@
 overall:
-  agent_name: "td3"
+  agent_name: "ddpg"
   env_name: "LunarLanderContinuous-v2"
   context_capacity: 1000000
   output:

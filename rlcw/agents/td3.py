@@ -6,9 +6,8 @@ from typing import List
 import torch as T
 import torch.nn.functional as F
 
-from actionNoise import ActionNoise
-from criticNetwork import CriticNetwork
-from actorNetwork import ActorNetwork
+from td3_classes.criticNetwork import CriticNetwork
+from td3_classes.actorNetwork import ActorNetwork
 from replayBuffer import ReplayBuffer
 
 
