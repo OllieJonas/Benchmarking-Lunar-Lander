@@ -27,13 +27,10 @@ class Orchestrator:
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
 
-        self.runner = None
-        self.time_taken = 0.
-        self.results = None
-
         self.scores = []
         self.score_history = []
         self.plot_score = []
+        self.timesteps = []
 
         # eval stuff
         self.should_save_charts = _save_cfg["charts"]
@@ -47,8 +44,10 @@ class Orchestrator:
         self.env.close()
         self.save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
                                 self.score_history, "Episode", "Reward")
-        self.save_plot_as_image(f"past_100_eps_avg.png", "Average Reward over Passed 100 Episodes",
+        self.save_plot_as_image(f"past_100_eps_avg.png", "Average Reward over Past 100 Episodes",
                                 self.plot_score, "Episode", "Reward")
+        self.save_plot_as_image(f"average_timesteps.png", "Average Time-Steps over Past 100 Episodes",
+                                self.timesteps, "Episode", "Time-Steps")
 
     def save_plot_as_image(self, name, title, data, x_label, y_label):
         num_eps = len(data)
@@ -80,6 +79,7 @@ class Orchestrator:
     def run_td3(self):
         best_score = self.env.reward_range[0]
         self.score_history = []
+        time_step_history = []
 
         # self.agent.load_models()
 
@@ -87,6 +87,7 @@ class Orchestrator:
             state, info = self.env.reset()
             done = False
             score = 0
+            time_steps = 0
             while not done:
                 action = self.agent.get_action(state)
                 next_state, reward, terminated, truncated, info = self.env.step(
@@ -104,6 +105,9 @@ class Orchestrator:
                 self.agent.train()
                 score += reward
                 state = next_state
+                time_steps += 1
+            time_step_history.append(time_steps)
+            self.timesteps.append(np.mean(time_step_history[-100:]))
             self.score_history.append(score)
             avg_score = np.mean(self.score_history[-100:])
 
@@ -115,11 +119,13 @@ class Orchestrator:
                   'average score %.1f' % avg_score)
 
     def run_ddpg(self):
+        time_step_history = []
         for t in range(self.max_episodes):
 
             state, info = self.env.reset()
             done = False
             score = 0
+            time_steps = 0
 
             while not done:
                 action = self.agent.get_action(state)
@@ -140,7 +146,10 @@ class Orchestrator:
 
                 score += reward
                 state = next_state
+                time_steps += 1
 
+            time_step_history.append(time_steps)
+            self.timesteps.append(np.mean(time_step_history[-100:]))
             self.score_history.append(score)
             avg_score = np.mean(self.score_history[-100:])
             self.plot_score.append(avg_score)

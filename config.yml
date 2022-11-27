@@ -12,7 +12,7 @@ overall:
       raw: false
       recordings: false
   episodes:
-    max: 10
+    max: 3
   timesteps:
     max: 4000
     start_training: 0
