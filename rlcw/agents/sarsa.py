@@ -102,8 +102,8 @@ class SarsaAgent():
         self.criterion = nn.MSELoss()
         self.num_actions = action_space.n
         self.num_replay = 4
-        self.discount = config['gamma']
-        self.tau = config['tau']
+        self.discount = 0.99
+        self.tau = 0.001
                 
         self.last_state = None
         self.last_action = None
