@@ -6,8 +6,8 @@ from typing import List
 import torch as T
 import torch.nn.functional as F
 
-from td3CriticNetwork import CriticNetwork
-from td3ActorNetwork import ActorNetwork
+from td3_files.td3Networks import ActorNetwork
+from td3_files.td3Networks import CriticNetwork
 from replayBuffer import ReplayBuffer
 
 

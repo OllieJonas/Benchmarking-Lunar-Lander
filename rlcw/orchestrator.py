@@ -68,15 +68,6 @@ class Orchestrator:
         torch.random.manual_seed(self.seed)
 
     def run_agent(self):
-        agent_name = self.agent.name()
-        if agent_name == "ddpg":
-            self.run_ddpg()
-        elif agent_name == "td3":
-            self.run_td3()
-        else:
-            print("No agent with that name found")
-
-    def run_td3(self):
         best_score = self.env.reward_range[0]
         time_step_history = []
 
@@ -105,6 +96,7 @@ class Orchestrator:
                 score += reward
                 state = next_state
                 time_steps += 1
+
             time_step_history.append(time_steps)
             self.timesteps.append(np.mean(time_step_history[-100:]))
             self.score_history.append(score)
@@ -116,41 +108,3 @@ class Orchestrator:
 
             print('episode ', t, 'score %.1f' % score,
                   'average score %.1f' % avg_score)
-
-    def run_ddpg(self):
-        time_step_history = []
-        for t in range(self.max_episodes):
-
-            state, info = self.env.reset()
-            done = False
-            score = 0
-            time_steps = 0
-
-            while not done:
-                action = self.agent.get_action(state)
-                next_state, reward, terminated, truncated, info = self.env.step(
-                    action)
-
-                self.agent.store_memory(
-                    state, action, reward, next_state, int(done))
-
-                if terminated or truncated:
-                    done = True
-
-                # render
-                if self.should_render:
-                    self.env.render()
-
-                self.agent.train()
-
-                score += reward
-                state = next_state
-                time_steps += 1
-
-            time_step_history.append(time_steps)
-            self.timesteps.append(np.mean(time_step_history[-100:]))
-            self.score_history.append(score)
-            avg_score = np.mean(self.score_history[-100:])
-            self.plot_score.append(avg_score)
-            print('episode ', t, 'score %.2f' % score,
-                  'trailing 100 games avg %.3f' % avg_score)

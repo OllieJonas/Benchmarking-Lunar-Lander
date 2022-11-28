@@ -5,8 +5,9 @@ import torch as T
 import torch.nn.functional as F
 
 from actionNoise import ActionNoise
-from ddpgCriticNetwork import CriticNetwork
-from ddpgActorNetwork import ActorNetwork
+from ddpg_files.ddpgNetworks import CriticNetwork
+from ddpg_files.ddpgNetworks import ActorNetwork
+
 from replayBuffer import ReplayBuffer
 
 # Code **inspired** by
