@@ -78,7 +78,6 @@ class Orchestrator:
 
     def run_td3(self):
         best_score = self.env.reward_range[0]
-        self.score_history = []
         time_step_history = []
 
         self.agent.load_models()
@@ -110,7 +109,7 @@ class Orchestrator:
             self.timesteps.append(np.mean(time_step_history[-100:]))
             self.score_history.append(score)
             avg_score = np.mean(self.score_history[-100:])
-
+            self.plot_score.append(avg_score)
             if avg_score > best_score:
                 best_score = avg_score
                 self.agent.save_models()
