@@ -1,7 +1,7 @@
 overall:
-  agent_name: "ddpg"
-  env_name: "LunarLanderContinuous-v2"
-  context_capacity: 1000000
+  agent_name: "sarsa"
+  env_name: "LunarLander-v2"
+  context_capacity: 64
   output:
     verbose: true
     render: false
@@ -12,7 +12,7 @@ overall:
       raw: false
       recordings: true
   episodes:
-    max: 1000
+    max: 100
   timesteps:
     max: 4000
     start_training: 0

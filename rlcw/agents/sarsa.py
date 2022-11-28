@@ -5,62 +5,286 @@ import numpy as np
 from typing import NoReturn, List
 
 from agents.abstract_agent import AbstractAgent
+import torch
+from torch import nn
+import torch.nn.functional as F
+from torch import optim
+from copy import deepcopy
+import util
 
 
-class SarsaAgent(AbstractAgent):
+DEVICE = util.get_torch_device()
+
+# neural network as q-table for lunar landing to too big
+class ActionValueNetwork(nn.Module):
+   
+    def __init__(self, observation, action_space):
+        super().__init__()
+        
+        self.state_dim = observation.shape[0]
+        self.num_hidden_units =  256
+        self.num_actions = action_space.n
+
+        self.hidden_layer = nn.Linear(self.state_dim, self.num_hidden_units)
+        self.output_layer = nn.Linear(self.num_hidden_units, self.num_actions)
+                
+    
+    def forward(self, state):
+        """
+        This is a feed-forward pass in the network
+        Args:
+            s (Numpy array): The state, a 2D array of shape (batch_size, state_dim)
+        Returns:
+            The action-values (Torch array) calculated using the network's weights.
+            A 2D array of shape (batch_size, num_actions)
+        """
+        state = torch.Tensor(state)
+        
+        q_vals = F.relu(self.hidden_layer(state))
+        q_vals = self.output_layer(q_vals)
+
+        return q_vals
+class ReplayBuffer(object):
+    def __init__(self, max_size, mini_batch):
+        self.minibatch_size = mini_batch
+        self.buffer = [] 
+        self.max_size = max_size
+        self.input_dims = [8]
+        self.mem_center = 0
+        self.state_memory = np.zeros((self.max_size, *self.input_dims))
+        self.new_state_memory = np.zeros((self.max_size, *self.input_dims))
+        self.action_memory = np.zeros((self.max_size, 2))
+        self.reward_memory = np.zeros(self.max_size)
+        self.terminal_memory = np.zeros(self.max_size, dtype=np.float32)
+
+    def append(self, state, action, reward, terminal, next_state):
+        index = self.mem_center % self.max_size
+        self.state_memory[index] = state
+        self.new_state_memory[index] = next_state
+        self.action_memory[index] = action
+        self.reward_memory[index] = reward
+        self.terminal_memory[index] = terminal
+        self.mem_center += 1
+
+    def sample(self):
+        max_mem = min(self.mem_center, self.max_size)
+        batch = np.random.choice(max_mem, self.minibatch_size)
+
+        states = self.state_memory[batch]
+        actions = self.action_memory[batch]
+        rewards = self.reward_memory[batch]
+        states_ = self.new_state_memory[batch]
+        terminal = self.terminal_memory[batch]
+
+        return states, actions, rewards, states_, terminal
+
+    def size(self):
+        return len(self.buffer)
+
+# Technically Deep/expected SARSA
+class SarsaAgent():
+    def name(self):
+        return "sarsa"
 
     def __init__(self, logger, action_space, observation_space, config):
+        """
+        Set parameters needed to setup the agent.
+        """
         self.observation_space =  observation_space
         self.action_space = action_space
 
-        self.q_table = self._init_q_table()
-        self.learn = 0.5
-        self.gamma = 0.9
-        self.epsilon = 0.5
+        self.replay_buffer = ReplayBuffer(64, 1)
 
-        super().__init__(logger, action_space, config)
-
-
-    def _init_q_table(self) -> np.array:
-            high = self.observation_space.high
-            low = self.observation_space.low
-            
-            n_states = (high - low)[0:6] * np.array([10, 10, 5, 5, 1, 1])
-            n_states = np.round(n_states, 0).astype(int) + 1
-
-            return np.zeros([n_states[0], n_states[1], n_states[2], n_states[3], n_states[4], n_states[5], self.action_space.n])
-
-    def name(self):
-        return "sarsa"
+        self.network = ActionValueNetwork(observation_space, action_space).to(DEVICE)
+        self.optimizer = optim.Adam(self.network.parameters(), lr = 1e-3, 
+                                    betas=(0.9, 0.999),
+                                    eps=1e-8) 
+        self.criterion = nn.MSELoss()
+        self.num_actions = action_space.n
+        self.num_replay = 4
+        self.discount = config['gamma']
+        self.tau = config['tau']
+                
+        self.last_state = None
+        self.last_action = None
         
-    def _continuous_to_discrete(self, state):
-        min_states = self.observation_space.low
-        state_discrete = (state[0] - min_states)[0:6] * np.array([10, 10, 5, 5, 1, 1])
-        return np.round(state_discrete, 0).astype(int)
-    
+        self.sum_rewards = 0
+        self.episode_steps = 0
+        self.loss = 0
 
     def get_action(self, state):
-        epsilon = self.epsilon
-        if epsilon and random.uniform(0, 1) < epsilon:
-            action = self.action_space.sample()
-
-        else:
-            state_discrete = self._continuous_to_discrete(state)
-            action = np.argmax(self.q_table[state_discrete[0], state_discrete[1], state_discrete[2], state_discrete[3], state_discrete[4], state_discrete[5]])
-        
+        """
+        Args:
+            state (Numpy array): the state.
+        Returns:
+            the action. 
+        """
+        action_values = self.network.forward(state)
+        probs_batch = self.softmax(action_values, self.tau).detach().numpy()
+        action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
         return action
+
+    def agent_start(self, state):
+        """The first method called when the experiment starts, called after
+        the environment starts.
+        Args:
+            state (Numpy array): the state from the
+                environment's evn_start function.
+        Returns:
+            The first action the agent takes.
+        """
+        self.sum_rewards = 0
+        self.episode_steps = 0
+        self.last_state = np.array([state])
+        self.last_action = self.get_action(self.last_state)
+        return self.last_action
+
+    def agent_step(self, reward, state):
+        """A step taken by the agent.
+        Args:
+            reward (float): the reward received for taking the last action taken
+            state (Numpy array): the state from the
+                environment's step based, where the agent ended up after the
+                last step
+        Returns:
+            The action the agent is taking.
+        """
         
-    def train(self, training_context: List) -> NoReturn:
-        s = self._continuous_to_discrete(training_context[0][0])
-        ns = self._continuous_to_discrete(training_context[0][1])
-        reward = training_context[0][2]
-        a = training_context[0][3]
-        na = self.get_action(training_context[1])
+        self.sum_rewards += reward
+        self.episode_steps += 1
+        state = np.array([state])
 
-        delta = self.learn * (
-                reward
-                + self.gamma * self.q_table[ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], na]
-                - self.q_table[s[0], s[1], s[2], s[3], s[4], s[5], a]
-        )
+        action = self.get_action(state) 
+        self.replay_buffer.append(self.last_state, self.last_action, reward, 0, state)
+        
+        if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
+            current_q = deepcopy(self.network)
+            for _ in range(self.num_replay):                
+                experiences = self.replay_buffer.sample()
+                
+                self.loss +=self.optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau,
+                                 self.criterion)
+                
+        self.last_state = state
+        self.last_action = action
+        
+        return self.last_action
 
-        self.q_table[s[0], s[1], s[2], s[3], s[4], s[5], a] += delta
+    def agent_end(self, reward):
+        """Run when the agent terminates.
+        Args:
+            reward (float): the reward the agent received for entering the
+                terminal state.
+        """
+        self.sum_rewards += reward
+        self.episode_steps += 1
+        
+        state = np.zeros_like(self.last_state)
+
+        self.replay_buffer.append(self.last_state, self.last_action, reward, 1, state)
+        
+        if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
+            current_q = deepcopy(self.network)
+            for _ in range(self.num_replay):
+                
+                experiences = self.replay_buffer.sample()
+                
+                self.loss += self.optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau,
+                                 self.criterion)
+    
+    def softmax(self, action_values, tau=1.0):
+        """
+        Args:
+            action_values (Tensor array): A 2D array of shape (batch_size, num_actions). 
+                        The action-values computed by an action-value network.              
+            tau (float): The temperature parameter scalar.
+        Returns:
+            A 2D Tensor array of shape (batch_size, num_actions). Where each column is a probability distribution 
+            over the actions representing the get_action.
+        """
+
+        preferences = action_values / tau
+        max_preference = torch.max(preferences)
+
+        reshaped_max_preference = max_preference.view((-1, 1))
+        exp_preferences = torch.exp(preferences - reshaped_max_preference)
+        sum_of_exp_preferences = torch.sum(exp_preferences, dim = 1)
+        
+        reshaped_sum_of_exp_preferences = sum_of_exp_preferences.view((-1, 1))
+        
+        action_probs = exp_preferences / reshaped_sum_of_exp_preferences
+        action_probs = action_probs.squeeze()
+        
+        return action_probs
+
+    def get_td(self, states, next_states, actions, rewards, discount, terminals, network, current_q, tau):
+        """
+        Args:
+            states (Numpy array): The batch of states with the shape (batch_size, state_dim).
+            next_states (Numpy array): The batch of next states with the shape (batch_size, state_dim).
+            actions (Numpy array): The batch of actions with the shape (batch_size,).
+            rewards (Numpy array): The batch of rewards with the shape (batch_size,).
+            discount (float): The discount factor (gamma).
+            terminals (Numpy array): The batch of terminals with the shape (batch_size,).
+            network (ActionValueNetwork): The latest state of the network that is getting replay updates.
+            current_q (ActionValueNetwork): The fixed network used for computing the targets, 
+                                            and particularly, the action-values at the next-states.
+        Returns:
+            target_vec (Tensor array): The TD Target for actions taken, of shape (batch_size,)
+            estimate_vec (Tensor array): The TD estimate for actions taken, of shape (batch_size,)
+        """
+        
+        q_next_mat = current_q.forward(next_states).detach()
+
+        probs_mat = self.softmax(q_next_mat, tau)
+        v_next_vec = torch.zeros((q_next_mat.shape[0]), dtype=torch.float64).detach()
+
+        if terminals:
+            terminals = [1]
+        else:
+            terminals = [0]
+        v_next_vec = torch.sum(probs_mat * q_next_mat, dim = 0) * (1 - torch.tensor(terminals))    
+
+        target_vec = torch.tensor(rewards) + (discount * v_next_vec)
+
+        q_mat = network.forward(states)
+        
+        batch_indices = torch.arange(q_mat.shape[0])
+
+        estimate_vec = q_mat[batch_indices, actions]  
+
+        return target_vec, estimate_vec
+
+    def optimize_network(self, experiences, discount, optimizer, network, current_q, tau, criterion):
+        """
+        Args:
+            experiences (Numpy array): The batch of experiences including the states, actions, 
+                                    rewards, terminals, and next_states.
+            discount (float): The discount factor.
+            network (ActionValueNetwork): The latest state of the network that is getting replay updates.
+            current_q (ActionValueNetwork): The fixed network used for computing the targets, 
+                                            and particularly, the action-values at the next-states.
+        Return:
+            Loss (float): The loss value for the current batch.
+        """
+    
+        states, actions, rewards, terminals, next_states = map(list, zip(*experiences))
+
+        states = np.concatenate(states) 
+        next_states = np.concatenate(next_states)
+        rewards = np.array(rewards) 
+        terminals = np.array(terminals) 
+        batch_size = states.shape[0] 
+        
+        td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, \
+                                            network, current_q, tau)
+        
+        # zero the gradients buffer
+        optimizer.zero_grad()
+        loss = criterion(td_estimate.double().to(DEVICE), td_target.to(DEVICE))
+
+        loss.backward()
+
+        optimizer.step()
+        
+        return (loss / batch_size).detach().numpy()
