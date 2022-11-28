@@ -34,7 +34,7 @@ class CriticNetwork(nn.Module):
         T.nn.init.uniform_(self.q.bias.data, -f3, f3)
 
         self.optimiser = optim.Adam(self.parameters(), lr=beta)
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cuda:1')
+        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
         self.to(self.device)
 
