@@ -6,7 +6,7 @@ overall:
     verbose: true
     render: false
     save:
-      episodes: 10
+      episodes: 25
       csv: true
       charts: true
       raw: false
@@ -37,7 +37,7 @@ agents:
     input_dims: [8]
     tau: 0.005
     noise: 0.1
-    batch_size: 100
+    batch_size: 128
     layer1_size: 400
     layer2_size: 300
     n_actions: 2
