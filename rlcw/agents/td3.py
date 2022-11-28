@@ -39,6 +39,10 @@ class Td3Agent():
                                   self.layer2_size, n_actions=self.n_actions,
                                   name='Actor')
 
+        self.actor_two = ActorNetwork(self.alpha, self.input_dims, self.layer1_size,
+                                      self.layer2_size, n_actions=self.n_actions,
+                                      name='ActorTwo')
+
         self.critic_one = CriticNetwork(self.beta, self.input_dims, self.layer1_size,
                                         self.layer2_size, n_actions=self.n_actions,
                                         name='CriticOne')
@@ -79,7 +83,7 @@ class Td3Agent():
     def get_action(self, observation):
         if self.time_step < self.warmup:
             mu = T.tensor(np.random.normal(scale=self.noise,
-                                           size=(self.n_actions,))).to(self.actor.device)
+                                           size=(self.n_actions,))).to(self.actor_two.device)
         else:
             state = T.tensor(observation, dtype=T.float).to(self.actor.device)
             mu = self.actor.forward(state).to(self.actor.device)

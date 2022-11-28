@@ -6,7 +6,7 @@ overall:
     verbose: true
     render: false
     save:
-      episodes: 20
+      episodes: 10
       csv: true
       charts: true
       raw: false
