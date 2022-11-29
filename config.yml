@@ -1,5 +1,5 @@
 overall:
-  agent_name: "ddpg - 20-14-28_11-22-2022"
+  agent_name: "dqn"
   env_name: "LunarLander-v2"
   context_capacity: 64
   output:
@@ -42,5 +42,13 @@ agents:
     actor_noise: 0.000001
     no_hidden_neurons: 256
   dqn:
-    foo: "bar"
-    learning_rate: 0.0001
+    learning_rate: 0.00005
+    batch_size: 64
+    sample_size: 50
+    hidden_layer_size: 64
+    update_count: 4
+    epsilon: 0.99
+    epsilon_decay: 0.0001
+    epsilon_min: 0.01
+    gamma: 0.99
+    tau: 0.0003

@@ -21,7 +21,7 @@ class ReplayBuffer(object):
                                             dtype=self.buffer.dtype), sample_size)
 
     def random_sample_transformed(self, sample_size, device):
-        random_sample = self.random_sample(self.sample_size)
+        random_sample = self.random_sample(sample_size)
 
         # TODO: This is literal hot garbage. Please fix. Thanks! :)
         curr_states, next_states, rewards, actions, dones = [np.asarray(x) for x in zip(*random_sample)]

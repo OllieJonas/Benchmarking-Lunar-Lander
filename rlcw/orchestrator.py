@@ -1,3 +1,5 @@
+import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -70,7 +72,9 @@ class Orchestrator:
 
     def _sync_seeds(self):
         np.random.seed(self.seed)
+        random.seed(self.seed)
         torch.random.manual_seed(self.seed)
+        torch.cuda.manual_seed(self.seed)
 
 
 class Runner:

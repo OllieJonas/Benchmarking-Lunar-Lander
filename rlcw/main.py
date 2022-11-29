@@ -11,15 +11,15 @@ from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
 from agents.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
-from agents.dqn import DeepQNetwork
+from agents.dqn.dqn import DeepQNetwork
 from orchestrator import Orchestrator
 
 LOGGER: logging.Logger
 
 
 def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, continuous=True, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
-        else gym.make(env_name, continuous=True, render_mode="human")
+    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+        else gym.make(env_name, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -47,19 +47,19 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
         return <Your Agent Class>(logger, action_space, cfg)
     """
     cfg = agents_config[name] if name in agents_config else None
-    logger = util.init_logger(f'{name.upper()} (Agent)')
+    _logger = logger.init_logger(f'{name.upper()} (Agent)')
     name = name.lower()
 
     if name == "random":
-        return RandomAgent(logger, action_space, cfg)
+        return RandomAgent(_logger, action_space, cfg)
     elif name == "sarsa":
-        return SarsaAgent(logger, action_space, cfg)
+        return SarsaAgent(_logger, action_space, cfg)
     elif name == "ddpg":
-        return DdpgAgent(logger, action_space, cfg)
+        return DdpgAgent(_logger, action_space, cfg)
     elif name == "sac":
-        return SoftActorCritic(logger, action_space, observation_space, cfg)
+        return SoftActorCritic(_logger, action_space, observation_space, cfg)
     elif name == "dqn":
-        return DeepQNetwork(logger, action_space, cfg)
+        return DeepQNetwork(_logger, action_space, observation_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
