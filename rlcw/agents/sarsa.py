@@ -4,7 +4,6 @@ import numpy as np
 
 from typing import NoReturn, List
 
-from agents.abstract_agent import AbstractAgent
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -26,28 +25,19 @@ class ActionValueNetwork(nn.Module):
         self.num_actions = action_space.n
 
         self.hidden_layer = nn.Linear(self.state_dim, self.num_hidden_units)
-        self.output_layer = nn.Linear(self.num_hidden_units, self.num_actions)
-                
+        self.output_layer = nn.Linear(self.num_hidden_units, self.num_actions)            
     
     def forward(self, state):
-        """
-        This is a feed-forward pass in the network
-        Args:
-            s (Numpy array): The state, a 2D array of shape (batch_size, state_dim)
-        Returns:
-            The action-values (Torch array) calculated using the network's weights.
-            A 2D array of shape (batch_size, num_actions)
-        """
         state = torch.Tensor(state)
         
         q_vals = F.relu(self.hidden_layer(state))
         q_vals = self.output_layer(q_vals)
 
         return q_vals
+
 class ReplayBuffer(object):
-    def __init__(self, max_size, mini_batch):
-        self.minibatch_size = mini_batch
-        self.buffer = [] 
+    def __init__(self, max_size):
+        self.batch_size = 64
         self.max_size = max_size
         self.input_dims = [8]
         self.mem_center = 0
@@ -68,7 +58,7 @@ class ReplayBuffer(object):
 
     def sample(self):
         max_mem = min(self.mem_center, self.max_size)
-        batch = np.random.choice(max_mem, self.minibatch_size)
+        batch = np.random.choice(max_mem,  self.batch_size)
 
         states = self.state_memory[batch]
         actions = self.action_memory[batch]
@@ -79,9 +69,9 @@ class ReplayBuffer(object):
         return states, actions, rewards, states_, terminal
 
     def size(self):
-        return len(self.buffer)
+        return len(self.state_memory)
 
-# Technically Deep/expected SARSA
+# Technically Deep/expected SARSA but t'is late so just SARSA
 class SarsaAgent():
     def name(self):
         return "sarsa"
@@ -90,106 +80,44 @@ class SarsaAgent():
         """
         Set parameters needed to setup the agent.
         """
-        self.observation_space =  observation_space
-        self.action_space = action_space
-
-        self.replay_buffer = ReplayBuffer(64, 1)
+        self.replay_buffer = ReplayBuffer(100000)
 
         self.network = ActionValueNetwork(observation_space, action_space).to(DEVICE)
-        self.optimizer = optim.Adam(self.network.parameters(), lr = 1e-3, 
-                                    betas=(0.9, 0.999),
+        self.optimizer = optim.Adam(self.network.parameters(), lr = 0.001, 
+                                    betas=(0.001, 0.00199),
                                     eps=1e-8) 
         self.criterion = nn.MSELoss()
         self.num_actions = action_space.n
-        self.num_replay = 4
-        self.discount = 0.99
-        self.tau = 0.001
-                
-        self.last_state = None
-        self.last_action = None
-        
-        self.sum_rewards = 0
-        self.episode_steps = 0
+        self.num_replay = 8
+        self.gamma = 0.99
+        self.tau = 0.01
+
         self.loss = 0
 
     def get_action(self, state):
-        """
-        Args:
-            state (Numpy array): the state.
-        Returns:
-            the action. 
-        """
+
         action_values = self.network.forward(state)
         probs_batch = self.softmax(action_values, self.tau).detach().numpy()
-        action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
-        return action
+        # this is bad but I'm really tired
+        if not np.isnan(probs_batch).any():
 
-    def agent_start(self, state):
-        """The first method called when the experiment starts, called after
-        the environment starts.
-        Args:
-            state (Numpy array): the state from the
-                environment's evn_start function.
-        Returns:
-            The first action the agent takes.
-        """
-        self.sum_rewards = 0
-        self.episode_steps = 0
-        self.last_state = np.array([state])
-        self.last_action = self.get_action(self.last_state)
-        return self.last_action
+            action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
+            return action
+        else:
+            
+            action = np.random.choice(self.num_actions)
+            return action
 
-    def agent_step(self, reward, state):
-        """A step taken by the agent.
-        Args:
-            reward (float): the reward received for taking the last action taken
-            state (Numpy array): the state from the
-                environment's step based, where the agent ended up after the
-                last step
-        Returns:
-            The action the agent is taking.
-        """
+    def train(self, state, action, reward, next_state, terminal):
+
+        self.replay_buffer.append(state, action, reward, terminal, next_state)
         
-        self.sum_rewards += reward
-        self.episode_steps += 1
-        state = np.array([state])
-
-        action = self.get_action(state) 
-        self.replay_buffer.append(self.last_state, self.last_action, reward, 0, state)
-        
-        if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
+        if self.replay_buffer.size() > self.replay_buffer.batch_size:
             current_q = deepcopy(self.network)
             for _ in range(self.num_replay):                
                 experiences = self.replay_buffer.sample()
                 
-                self.loss +=self.optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau,
-                                 self.criterion)
-                
-        self.last_state = state
-        self.last_action = action
-        
-        return self.last_action
-
-    def agent_end(self, reward):
-        """Run when the agent terminates.
-        Args:
-            reward (float): the reward the agent received for entering the
-                terminal state.
-        """
-        self.sum_rewards += reward
-        self.episode_steps += 1
-        
-        state = np.zeros_like(self.last_state)
-
-        self.replay_buffer.append(self.last_state, self.last_action, reward, 1, state)
-        
-        if self.replay_buffer.size() > self.replay_buffer.minibatch_size:
-            current_q = deepcopy(self.network)
-            for _ in range(self.num_replay):
-                
-                experiences = self.replay_buffer.sample()
-                
-                self.loss += self.optimize_network(experiences, self.discount, self.optimizer, self.network, current_q, self.tau,
+                self.loss +=self.optimize_network(experiences, self.gamma, self.optimizer, self.network, current_q, self.tau,
                                  self.criterion)
     
     def softmax(self, action_values, tau=1.0):
@@ -202,7 +130,6 @@ class SarsaAgent():
             A 2D Tensor array of shape (batch_size, num_actions). Where each column is a probability distribution 
             over the actions representing the get_action.
         """
-
         preferences = action_values / tau
         max_preference = torch.max(preferences)
 
@@ -239,20 +166,20 @@ class SarsaAgent():
         probs_mat = self.softmax(q_next_mat, tau)
         v_next_vec = torch.zeros((q_next_mat.shape[0]), dtype=torch.float64).detach()
 
-        if terminals:
+        if terminals.any() ==1 :
             terminals = [1]
         else:
             terminals = [0]
-        v_next_vec = torch.sum(probs_mat * q_next_mat, dim = 0) * (1 - torch.tensor(terminals))    
-
+        v_next_vec = torch.sum(probs_mat * q_next_mat, dim = 1) * (1 - torch.tensor(terminals))    
+        
         target_vec = torch.tensor(rewards) + (discount * v_next_vec)
 
         q_mat = network.forward(states)
         
         batch_indices = torch.arange(q_mat.shape[0])
 
-        estimate_vec = q_mat[batch_indices, actions]  
-
+        estimate_vec = q_mat[batch_indices, np.expand_dims(np.max(actions, axis=1), axis=1)]  
+        
         return target_vec, estimate_vec
 
     def optimize_network(self, experiences, discount, optimizer, network, current_q, tau, criterion):
@@ -267,13 +194,12 @@ class SarsaAgent():
         Return:
             Loss (float): The loss value for the current batch.
         """
-    
-        states, actions, rewards, terminals, next_states = map(list, zip(*experiences))
-
-        states = np.concatenate(states) 
-        next_states = np.concatenate(next_states)
-        rewards = np.array(rewards) 
-        terminals = np.array(terminals) 
+        states = experiences[0]
+        actions = experiences[1]
+        rewards = experiences[2]
+        next_states = experiences[3]
+        
+        terminals = experiences[4]
         batch_size = states.shape[0] 
         
         td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, \

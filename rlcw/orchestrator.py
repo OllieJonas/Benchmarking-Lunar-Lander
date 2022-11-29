@@ -85,6 +85,11 @@ class Orchestrator:
                 if name == "ddpg":
                     self.agent.store_memory(
                         state, action, reward, next_state, int(done))
+                
+                # sorry about this if statement :)
+                if name == "sarsa":
+                    self.agent.train(
+                        state, action, reward, next_state, int(done))
 
                 if terminated or truncated:
                     done = True
@@ -93,7 +98,7 @@ class Orchestrator:
                 if self.should_render:
                     self.env.render()
 
-                self.agent.train(None)
+                #self.agent.train(None)
 
                 score += reward
                 state = next_state
