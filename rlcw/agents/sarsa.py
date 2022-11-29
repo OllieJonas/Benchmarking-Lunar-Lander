@@ -17,23 +17,33 @@ DEVICE = util.get_torch_device()
 # neural network as q-table for lunar landing to too big
 class ActionValueNetwork(nn.Module):
    
-    def __init__(self, observation, action_space):
+    def __init__(self, observation, action_space, no_layers=1, initial_weight=3e-3):
         super().__init__()
-        
-        self.state_dim = observation.shape[0]
-        self.num_hidden_units =  256
-        self.num_actions = action_space.n
 
-        self.hidden_layer = nn.Linear(self.state_dim, self.num_hidden_units)
-        self.output_layer = nn.Linear(self.num_hidden_units, self.num_actions)            
-    
+        if no_layers <= 0:
+            raise ValueError("can't be less than 0!")
+
+        self.no_states = observation.shape[0]
+        self.no_hidden_neurons = 256
+        self.no_layers = no_layers
+        self.initial_weight = initial_weight
+
+        self.input_layer = nn.Linear(self.no_states, self.no_hidden_neurons)
+        self.hidden_layer = nn.Linear(self.no_hidden_neurons, self.no_hidden_neurons)
+        self.output_layer = nn.Linear(self.no_hidden_neurons, action_space.n)
+
+        self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
+        self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
+
+        self.float()
+
     def forward(self, state):
         state = torch.Tensor(state)
-        
-        q_vals = F.relu(self.hidden_layer(state))
-        q_vals = self.output_layer(q_vals)
+        inp = nn.functional.relu(self.input_layer(state))
+        hidden = nn.functional.relu(self.hidden_layer(inp))
+        out = self.output_layer(hidden)
 
-        return q_vals
+        return out
 
 class ReplayBuffer(object):
     def __init__(self, max_size):
@@ -98,27 +108,22 @@ class SarsaAgent():
 
         action_values = self.network.forward(state)
         probs_batch = self.softmax(action_values, self.tau).detach().numpy()
-        # this is bad but I'm really tired
-        if not np.isnan(probs_batch).any():
 
-            action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
-            return action
-        else:
-            
-            action = np.random.choice(self.num_actions)
-            return action
+        action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
+        return action
 
     def train(self, state, action, reward, next_state, terminal):
-
         self.replay_buffer.append(state, action, reward, terminal, next_state)
-        
-        if self.replay_buffer.size() > self.replay_buffer.batch_size:
-            current_q = deepcopy(self.network)
-            for _ in range(self.num_replay):                
-                experiences = self.replay_buffer.sample()
-                
-                self.loss +=self.optimize_network(experiences, self.gamma, self.optimizer, self.network, current_q, self.tau,
-                                 self.criterion)
+
+        if self.replay_buffer.mem_center < self.replay_buffer.batch_size:
+            return
+
+        current_q = deepcopy(self.network)
+        for _ in range(self.num_replay):                
+            experiences = self.replay_buffer.sample()
+            
+            self.loss +=self.optimize_network(experiences, self.gamma, self.optimizer, self.network, current_q, self.tau,
+                                self.criterion)
     
     def softmax(self, action_values, tau=1.0):
         """
@@ -179,7 +184,7 @@ class SarsaAgent():
         batch_indices = torch.arange(q_mat.shape[0])
 
         estimate_vec = q_mat[batch_indices, np.expand_dims(np.max(actions, axis=1), axis=1)]  
-        
+
         return target_vec, estimate_vec
 
     def optimize_network(self, experiences, discount, optimizer, network, current_q, tau, criterion):
@@ -205,12 +210,7 @@ class SarsaAgent():
         td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, \
                                             network, current_q, tau)
         
-        # zero the gradients buffer
-        optimizer.zero_grad()
         loss = criterion(td_estimate.double().to(DEVICE), td_target.to(DEVICE))
-
         loss.backward()
 
-        optimizer.step()
-        
         return (loss / batch_size).detach().numpy()
