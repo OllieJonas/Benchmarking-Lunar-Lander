@@ -78,8 +78,6 @@ class ReplayBuffer(object):
 
         return states, actions, rewards, states_, terminal
 
-    def size(self):
-        return len(self.state_memory)
 
 # Technically Deep/expected SARSA but t'is late so just SARSA
 class SarsaAgent():
@@ -165,7 +163,7 @@ class SarsaAgent():
             target_vec (Tensor array): The TD Target for actions taken, of shape (batch_size,)
             estimate_vec (Tensor array): The TD estimate for actions taken, of shape (batch_size,)
         """
-        
+
         q_next_mat = current_q.forward(next_states).detach()
 
         probs_mat = self.softmax(q_next_mat, tau)
