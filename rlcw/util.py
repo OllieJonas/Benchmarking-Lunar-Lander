@@ -29,7 +29,7 @@ def get_latest_run_of(name: str):
     potential_candidates = sorted({s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]},
                                   key=lambda s: datetime.strptime(s.split(" - ")[1].strip(), DATE_TIME_FORMAT),
                                   reverse=True)
-    return potential_candidates[0] if potential_candidates else ""
+    return f"potential_candidates[0]/" if potential_candidates else ""
 
 
 def get_latest_policies_for(name: str):
