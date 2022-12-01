@@ -9,7 +9,7 @@ import logger
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
-from agents.ddpg import DdpgAgent
+from agents.ddpg.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
 from agents.dqn.dqn import DeepQNetwork
 from orchestrator import Orchestrator
@@ -36,11 +36,12 @@ def main():
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
     orchestrator = Orchestrator(
         env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
+    orchestrator.load()
     orchestrator.run()
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, state_space, agents_config) -> AbstractAgent:
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -53,13 +54,13 @@ def get_agent(name: str, action_space, observation_space, agents_config) -> Abst
     if name == "random":
         return RandomAgent(_logger, action_space, cfg)
     elif name == "sarsa":
-        return SarsaAgent(_logger, action_space, cfg)
+        return SarsaAgent(_logger, action_space, state_space, cfg)
     elif name == "ddpg":
-        return DdpgAgent(_logger, action_space, cfg)
+        return DdpgAgent(_logger, action_space, state_space, cfg)
     elif name == "sac":
-        return SoftActorCritic(_logger, action_space, observation_space, cfg)
+        return SoftActorCritic(_logger, action_space, state_space, cfg)
     elif name == "dqn":
-        return DeepQNetwork(_logger, action_space, observation_space, cfg)
+        return DeepQNetwork(_logger, action_space, state_space, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 

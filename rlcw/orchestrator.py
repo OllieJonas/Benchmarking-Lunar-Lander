@@ -1,20 +1,18 @@
 import random
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from IPython import display
 
 import evaluator as eval
-import util
 import logger
-from agents.abstract_agent import AbstractAgent
-from replay_buffer import ReplayBuffer
+import util
+from agents.abstract_agent import AbstractAgent, CheckpointAgent
+from runners import RunnerFactory
 
 
 class Orchestrator:
 
-    def __init__(self, env, agent: AbstractAgent, config, episodes_to_save, seed: int = 42):
+    def __init__(self, env, agent, config, episodes_to_save, seed: int = 42):
         self.LOGGER = logger.init_logger("Orchestrator")
 
         self.env = env
@@ -23,11 +21,16 @@ class Orchestrator:
         self.episodes_to_save = episodes_to_save
         self.seed = seed
 
-        _save_cfg = config["overall"]["output"]["save"]
+        # checkpoint stuff
+        self.should_save_checkpoints = config["overall"]["checkpoint"]["save"]["enabled"]
+        self.save_checkpoint_history = config["overall"]["checkpoint"]["save"]["history"]
+
+        self.should_load_from_checkpoint = config["overall"]["checkpoint"]["load"]["enabled"]
+        self.should_use_latest_run_for_load = config["overall"]["checkpoint"]["load"]["use_latest"]
+        self.load_directory = config["overall"]["checkpoint"]["load"]["custom_dir"]
 
         # runner stuff
         self.should_render = config["overall"]["output"]["render"]
-        self.should_save_raw = _save_cfg["raw"]
 
         self.max_episodes = config["overall"]["episodes"]["max"]
 
@@ -35,11 +38,14 @@ class Orchestrator:
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
 
-        self.runner = None
+        self.runner_factory = RunnerFactory()
         self.time_taken = 0.
         self.results = None
 
         # eval stuff
+        _save_cfg = config["overall"]["output"]["save"]
+
+        self.should_save_raw = _save_cfg["raw"]
         self.should_save_charts = _save_cfg["charts"]
         self.should_save_csv = _save_cfg["csv"]
 
@@ -47,17 +53,26 @@ class Orchestrator:
 
         self._sync_seeds()
 
+    def load(self):
+        loader = Loader(enabled=self.should_load_from_checkpoint,
+                        agent_name=self.agent.name(),
+                        use_latest=self.should_use_latest_run_for_load,
+                        path=self.load_directory)
+
+        loader.load(self.agent)
+
     def run(self):
-        self.runner = Runner(self.env, self.agent, self.seed,
-                             episodes_to_save=self.episodes_to_save,
-                             should_render=self.should_render,
-                             max_timesteps=self.max_timesteps,
-                             max_episodes=self.max_episodes,
-                             start_training_timesteps=self.start_training_timesteps,
-                             training_ctx_capacity=self.training_ctx_capacity)
+        runner = self.runner_factory.get_runner(self.env, self.agent, self.seed,
+                                                episodes_to_save=self.episodes_to_save,
+                                                should_render=self.should_render,
+                                                max_timesteps=self.max_timesteps,
+                                                max_episodes=self.max_episodes,
+                                                start_training_timesteps=self.start_training_timesteps,
+                                                training_ctx_capacity=self.training_ctx_capacity,
+                                                should_save_checkpoints=self.should_save_checkpoints)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.results = self.runner.run()
+        self.results = runner.run()
         # self.time_taken = end - start
         # self.LOGGER.info(f'Time Taken: {self.time_taken}')
         self.env.close()
@@ -77,95 +92,28 @@ class Orchestrator:
         torch.cuda.manual_seed(self.seed)
 
 
-class Runner:
+class Loader:
+    def __init__(self, enabled, agent_name, use_latest, path):
+        self.LOGGER = logger.init_logger("CheckpointLoader")
 
-    def __init__(self, env, agent: AbstractAgent, seed: int,
-                 should_render,
-                 episodes_to_save,
-                 max_timesteps,
-                 max_episodes,
-                 start_training_timesteps,
-                 training_ctx_capacity):
-        self.LOGGER = logger.init_logger("Runner")
+        self.is_enabled = enabled
+        self.path = util.get_latest_policies_for(agent_name) if use_latest else path
 
-        self.env = env
-        self.agent = agent
-        self.seed = seed
-
-        self.episodes_to_save = episodes_to_save
-        self.should_render = should_render
-        self.max_timesteps = max_timesteps
-        self.max_episodes = max_episodes
-        self.start_training_timesteps = start_training_timesteps
-        self.training_ctx_capacity = training_ctx_capacity
-
-        self.results = Results(agent_name=agent.name(), date_time=util.CURR_DATE_TIME)
-
-    def run(self):
-        state, info = self.env.reset()
-        training_context = ReplayBuffer(self.training_ctx_capacity)
-
-        print(self.env.observation_space)
-
-        curr_episode = 0
-
-        is_using_jupyter = util.is_using_jupyter()
-
-        # display
-        image = plt.imshow(self.env.render()) if is_using_jupyter else None
-
-        for t in range(self.max_timesteps):
-            if curr_episode > self.max_episodes:
-                break
-
-            action = self.agent.get_action(state)
-            next_state, reward, terminated, truncated, info = self.env.step(action)
-
-            # render
-            if self.should_render:
-                if is_using_jupyter:
-                    image.set_data(self.env.render())
-                    display.display(plt.gcf())
-                    display.clear_output(wait=True)
-                else:
-                    self.env.render()
-
-            training_context.add(np.array([
-                state,
-                next_state,
-                reward,
-                action,
-                terminated], dtype=object))
-
-            if t > self.start_training_timesteps:
-                self.agent.train(training_context)
-
-            state = next_state
-
-            timestep_result = Results.Timestep(state=state, action=action, reward=reward)
-            summary = self.results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
-
-            if summary is not None:
-                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {summary}")
-
-            # self.LOGGER.debug(timestep_result)
-
-            if terminated:
-                curr_episode += 1
-                state, info = self.env.reset()
-
-            if truncated:
-                state, info = self.env.reset()
-
-        return self.results
+    def load(self, agent):
+        if self.is_enabled:
+            if not isinstance(agent, CheckpointAgent):
+                self.LOGGER.warning("Can't load checkpoints for this agent! Disabling...")
+            else:
+                self.LOGGER.info(f"Loading enabled! Loading from {self.path}...")
+                agent.load(self.path)
 
 
 class Results:
     """
-    idk how this is going to interact with pytorch cuda parallel stuff so maybe we'll have to forget this? atm,
+    idk how this is going to interact with pytorch cuda parallel stuff, so maybe we'll have to forget this? atm,
     this is responsible for recording results.
-
     """
+
     class Timestep:
         def __init__(self, state, action, reward):
             self.state = state

@@ -1,14 +1,14 @@
-import random
+"""
+author: Yatin & Ollie
+"""
+from typing import NoReturn
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 import util
-
-from typing import NoReturn
-
-from agents.abstract_agent import CheckpointedAbstractAgent
+from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
 DEVICE = util.get_torch_device()
@@ -127,7 +127,7 @@ class Actor(nn.Module):
         return action, log_probs
 
 
-class SoftActorCritic(CheckpointedAbstractAgent):
+class SoftActorCritic(CheckpointAgent):
 
     def __init__(self, logger, action_space, observation_space, config):
         super().__init__(logger, action_space, config)

@@ -1,7 +1,15 @@
 overall:
-  agent_name: "dqn"
-  env_name: "LunarLander-v2"
-  context_capacity: 64
+  agent_name: "ddpg"
+  env_name: "LunarLanderContinuous-v2"
+  context_capacity: 1000000
+  checkpoint:
+    save:
+      enabled: true
+      history: 100
+    load:
+      enabled: false
+      use_latest_run: false
+      custom_dir: models/
   output:
     verbose: true
     render: false
@@ -12,7 +20,7 @@ overall:
       raw: false
       recordings: true
   episodes:
-    max: 2
+    max: 1000
   timesteps:
     max: 1000000000000000
     start_training: 50
@@ -24,8 +32,7 @@ agents:
     beta: 0.00025
     gamma: 0.99
     tau: 0.001
-    batch_size: 50
-    input_dims: [8]
+    batch_size: 64
     layer1_size: 400
     layer2_size: 300
     n_actions: 2
@@ -52,3 +59,8 @@ agents:
     epsilon_min: 0.01
     gamma: 0.99
     tau: 0.0003
+  sarsa:
+    gamma: 0.99
+    tau: 0.01
+    sample_size: 64
+    batch_size: 128

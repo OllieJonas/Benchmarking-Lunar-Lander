@@ -3,46 +3,66 @@ import torch
 
 
 class ReplayBuffer(object):
-    def __init__(self, max_capacity):
-        self.max_capacity = max_capacity
-        self.size = 0
-        self.buffer = self._empty_buff()
+    def __init__(self, max_size, input_dims=None):
+        if input_dims is None:
+            input_dims = [8]
 
-    def add(self, item):
-        if self.size >= self.max_capacity:
-            self.buffer[0] = item
-            self.buffer = np.roll(self.buffer, -1)
-        else:
-            self.buffer[self.size] = item
-            self.size += 1
+        self.max_capacity = max_size
+        self.input_dims = input_dims
+
+        # buff
+        self.states = np.zeros((self.max_capacity, *self.input_dims))
+        self.next_states = np.zeros((self.max_capacity, *self.input_dims))
+        self.actions = np.zeros((self.max_capacity, 2))
+        self.rewards = np.zeros(self.max_capacity)
+        self.dones = np.zeros(self.max_capacity, dtype=np.float32)
+
+        self.cnt = 0
+
+    def add(self, state, next_state, action, reward, done):
+        index = self.cnt % self.max_capacity
+        self.states[index] = state
+        self.next_states[index] = next_state
+        self.actions[index] = action
+        self.rewards[index] = reward
+        self.dones[index] = 1 - done
+        self.cnt += 1
 
     def random_sample(self, sample_size):
-        return np.random.choice(np.fromiter((x for x in self.buffer if x is not None),
-                                            dtype=self.buffer.dtype), sample_size)
+        size = min(self.cnt, self.max_capacity)
 
-    def random_sample_transformed(self, sample_size, device):
-        random_sample = self.random_sample(sample_size)
+        batch = np.random.choice(size, sample_size)
 
-        # TODO: This is literal hot garbage. Please fix. Thanks! :)
-        curr_states, next_states, rewards, actions, dones = [np.asarray(x) for x in zip(*random_sample)]
+        states = self.states[batch]
+        actions = self.actions[batch]
+        rewards = self.rewards[batch]
+        next_states = self.next_states[batch]
+        terminal = self.dones[batch]
 
-        curr_states = torch.from_numpy(curr_states).type(torch.FloatTensor).to(device)
-        next_states = torch.from_numpy(next_states).type(torch.FloatTensor).to(device)
-        rewards = torch.from_numpy(rewards).type(torch.FloatTensor).to(device)
-        actions = torch.from_numpy(actions).type(torch.FloatTensor).to(device)
-        dones = torch.from_numpy(dones).type(torch.FloatTensor).to(device)
+        return states, actions, rewards, next_states, terminal
 
-        return curr_states, next_states, rewards, actions, dones
+    def random_sample_as_tensors(self, sample_size, device):
+        state, action, reward, new_state, terminal = self.random_sample(sample_size)
 
-    def flush(self):
-        self.buffer = self._empty_buff()
-        self.size = 0
+        state = torch.tensor(state, dtype=torch.float).to(device)
+        action = torch.tensor(action, dtype=torch.float).to(device)
+        reward = torch.tensor(reward, dtype=torch.float).to(device)
+        new_state = torch.tensor(new_state, dtype=torch.float).to(device)
+        done = torch.tensor(terminal).to(device)
 
-    def _empty_buff(self):
-        return np.empty(self.max_capacity, dtype=object)
+        return state, action, reward, new_state, terminal
 
     def __getitem__(self, item):
-        return self.buffer[item]
+        return np.asarray([self.states[item],
+                           self.next_states[item],
+                           self.actions[item],
+                           self.rewards[item],
+                           self.dones[item]],
+                          dtype=object)
 
     def __repr__(self):
-        return self.buffer.__repr__()
+        return f"states: {self.states.__repr__()},\n " \
+               f"next_states: {self.next_states.__repr__()},\n" \
+               f"actions: {self.actions.__repr__()},\n" \
+               f"rewards: {self.rewards.__repr__()},\n" \
+               f"dones: {self.dones.__repr__()},\n"

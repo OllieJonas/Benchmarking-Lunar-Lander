@@ -35,6 +35,7 @@ def get_latest_run_of(name: str):
 
 def get_latest_policies_for(name: str):
     latest = get_latest_run_of(name)
+    return latest
 
 
 # -------------------------------- PATHS --------------------------------
@@ -62,17 +63,7 @@ def save_file(directory, file_name, contents):
         f.write(contents)
 
 
-def save_torch_nn(net, file_name):
-    torch.save(net.state_dict(), with_file_extension(file_name, ".mdl"))
-
-
-def load_torch_nn(net, file_name):
-    net.load_state_dict(torch.load(file_name))
-
-
-def get_torch_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+# -------------------------------- JUPYTER --------------------------------
 
 def is_using_jupyter():
     return using_jupyter
@@ -88,6 +79,9 @@ def set_agent_name(agent_name):
     AGENT_NAME = agent_name
 
 
+# -------------------------------- MATHS --------------------------------
+MIN_INT = -2147483648  # just a small af number
+
 if __name__ == "__main__":
-    print(get_latest_run_of("ddpg"))
-    print(get_latest_run_of("sac"))
+    print(get_latest_policies_for("ddpg"))
+    print(get_latest_policies_for("sac"))

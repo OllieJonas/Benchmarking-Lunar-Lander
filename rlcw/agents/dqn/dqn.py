@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from copy import deepcopy
 
-from agents.abstract_agent import CheckpointedAbstractAgent
+from agents.abstract_agent import CheckpointAgent
 from agents.dqn.policy import EpsilonGreedyPolicy
 from replay_buffer import ReplayBuffer
 
@@ -28,7 +28,7 @@ class SimpleNetwork(nn.Module):
         return self.layers(x)
 
 
-class DeepQNetwork(CheckpointedAbstractAgent):
+class DeepQNetwork(CheckpointAgent):
 
     def __init__(self, logger, action_space, observation_space, config):
         super().__init__(logger, action_space, config)
@@ -69,7 +69,7 @@ class DeepQNetwork(CheckpointedAbstractAgent):
     def save(self):
         pass
 
-    def load(self):
+    def load(self, path):
         pass
 
     def name(self) -> str:
@@ -93,7 +93,7 @@ class DeepQNetwork(CheckpointedAbstractAgent):
 
     def _do_train(self, training_context):
         states, next_states, rewards, actions, dones = \
-            training_context.random_sample_transformed(self.sample_size, self.device)
+            training_context.random_sample(self.sample_size, self.device)
 
         predicted = self.value_network.forward(states).gather(actions, 1)
 
