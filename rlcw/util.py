@@ -1,13 +1,10 @@
-import logging
+import copy
 import os
 import sys
-import copy
-import torch
-import numpy as np
-
 from datetime import datetime
 
 CURR_DATE_TIME = None
+DATE_TIME_FORMAT = "%H-%M-%S_%m-%d-%Y"
 AGENT_NAME = None
 
 using_jupyter = False
@@ -29,8 +26,10 @@ def get_latest_run_of(name: str):
     # it's not my code if I don't fit in a ridiculous, confusing & overly complicated one-liner >:)
     # shame im really fighting against python to do this, man streams are so much easier >:(
     walk = list(os.walk(get_output_root_path()))[1:]
-    latest = sorted(list(set([s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]])), reverse=True)
-    return [s for s in walk if latest and latest[0] in s[0]]
+    potential_candidates = sorted({s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]},
+                                  key=lambda s: datetime.strptime(s.split(" - ")[1].strip(), DATE_TIME_FORMAT),
+                                  reverse=True)
+    return potential_candidates[0] if potential_candidates else ""
 
 
 def get_latest_policies_for(name: str):
@@ -55,7 +54,7 @@ def get_curr_session_output_path():
     global CURR_DATE_TIME
 
     if CURR_DATE_TIME is None:
-        CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%d-%m-%Y"))}'
+        CURR_DATE_TIME = f'{str(datetime.now().strftime(DATE_TIME_FORMAT))}'
 
     return f'{get_output_root_path()}{AGENT_NAME} - {CURR_DATE_TIME}/'
 
@@ -85,7 +84,3 @@ def set_agent_name(agent_name):
 
 # -------------------------------- MATHS --------------------------------
 MIN_INT = -2147483648  # just a small af number
-
-if __name__ == "__main__":
-    print(get_latest_policies_for("ddpg"))
-    print(get_latest_policies_for("sac"))
