@@ -9,7 +9,9 @@ overall:
     load:
       enabled: false
       use_latest_run: false
-      custom_dir: models/
+      custom:
+        use_relative: true
+        path: models/
   output:
     verbose: true
     render: false

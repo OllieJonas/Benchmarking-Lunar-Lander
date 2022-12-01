@@ -29,7 +29,7 @@ class RunnerFactory:
                                     checkpoint_history=checkpoint_history)
         else:
             if should_save_checkpoints:
-                self.LOGGER.warning("You can't checkpoint this agent!")
+                self.LOGGER.warning("You can't save checkpoints for this agent!")
 
             return SimpleRunner(env=env, agent=agent, seed=seed, should_render=should_render,
                                 episodes_to_save=episodes_to_save, max_timesteps=max_timesteps,
@@ -37,7 +37,7 @@ class RunnerFactory:
                                 training_ctx_capacity=training_ctx_capacity)
 
 
-class AbstractRunner(abc.ABC):
+class RunnerStrategy(abc.ABC):
 
     def __init__(self, env, agent, seed: int, should_render, episodes_to_save, max_timesteps,
                  max_episodes, start_training_timesteps, training_ctx_capacity):
@@ -74,7 +74,7 @@ class AbstractRunner(abc.ABC):
 
 
 # If your agent inherits CheckpointAgent, it's using this runner.
-class CheckpointRunner(AbstractRunner):
+class CheckpointRunner(RunnerStrategy):
 
     def __init__(self, env, agent, seed: int, should_render, episodes_to_save, max_timesteps,
                  max_episodes, start_training_timesteps, training_ctx_capacity, should_checkpoint, checkpoint_history):
@@ -128,8 +128,10 @@ class CheckpointRunner(AbstractRunner):
                 curr_best_score = average_score
                 self.agent.save()
 
+        return results
 
-class SimpleRunner(AbstractRunner):
+
+class SimpleRunner(RunnerStrategy):
 
     def __init__(self, env, agent, seed: int, should_render, episodes_to_save, max_timesteps,
                  max_episodes, start_training_timesteps, training_ctx_capacity):

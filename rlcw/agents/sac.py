@@ -11,9 +11,6 @@ import util
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
-DEVICE = util.get_torch_device()
-
-
 class Value(nn.Module):
 
     def __init__(self, no_states, no_hidden_neurons, no_layers=1, initial_weight=3e-3):
@@ -121,7 +118,7 @@ class Actor(nn.Module):
 
         normal_sample = probs.sample()
 
-        action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(DEVICE)
+        action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(self.device)
 
         log_probs = (probs.log_prob(normal_sample) - torch.log(1 - action.pow(2) + self.noise)).sum(1)
         return action, log_probs
@@ -162,14 +159,14 @@ class SoftActorCritic(CheckpointAgent):
         self.value_network = Value(no_states=self.state_size,
                                    no_hidden_neurons=self.no_hidden_neurons,
                                    initial_weight=self.nn_initial_weights,
-                                   ).to(DEVICE)
+                                   ).to(self.device)
 
         self.value_network_optimizer = optim.Adam(self.value_network.parameters(), lr=self.learning_rate)
 
         self.target_value_network = Value(no_states=self.state_size,
                                           no_hidden_neurons=self.no_hidden_neurons,
                                           initial_weight=self.nn_initial_weights,
-                                          ).to(DEVICE)
+                                          ).to(self.device)
 
         self.target_value_network_optimizer = optim.Adam(self.target_value_network.parameters(), lr=self.learning_rate)
 
@@ -177,7 +174,7 @@ class SoftActorCritic(CheckpointAgent):
                                        no_actions=self.action_size,
                                        no_hidden_neurons=self.no_hidden_neurons,
                                        initial_weight=self.nn_initial_weights,
-                                       ).to(DEVICE)
+                                       ).to(self.device)
 
         self.critic_network_1_optimizer = optim.Adam(self.critic_network_1.parameters(), lr=self.learning_rate)
 
@@ -185,7 +182,7 @@ class SoftActorCritic(CheckpointAgent):
                                        no_actions=self.action_size,
                                        no_hidden_neurons=self.no_hidden_neurons,
                                        initial_weight=self.nn_initial_weights,
-                                       ).to(DEVICE)
+                                       ).to(self.device)
 
         self.critic_network_2_optimizer = optim.Adam(self.critic_network_2.parameters(), lr=self.learning_rate)
 
@@ -195,21 +192,29 @@ class SoftActorCritic(CheckpointAgent):
                                    no_actions=self.action_size,
                                    no_hidden_neurons=self.no_hidden_neurons,
                                    initial_weight=self.nn_initial_weights,
-                                   ).to(DEVICE)
+                                   ).to(self.device)
 
         self.actor_network_optimizer = optim.Adam(self.actor_network.parameters(), lr=self.learning_rate)
 
     def save(self):
-        pass
+        self.save_checkpoint(self.value_network, "Value")
+        self.save_checkpoint(self.target_value_network, "TargetValue")
+        self.save_checkpoint(self.critic_network_1, "Critic1")
+        self.save_checkpoint(self.critic_network_2, "Critic2")
+        self.save_checkpoint(self.actor_network, "Actor")
 
-    def load(self):
-        pass
+    def load(self, path):
+        self.load_checkpoint(self.value_network, path, "Value")
+        self.load_checkpoint(self.target_value_network, path, "TargetValue")
+        self.load_checkpoint(self.critic_network_1, path, "Critic1")
+        self.load_checkpoint(self.critic_network_2, path, "Critic2")
+        self.load_checkpoint(self.actor_network, path, "Actor")
 
     def name(self) -> str:
         return "SAC"
 
     def get_action(self, state):
-        state = torch.Tensor(state).unsqueeze(0).to(DEVICE)
+        state = torch.Tensor(state).unsqueeze(0).to(self.device)
         actions, _ = self.actor_network.sample_normal(state)
 
         action = actions.cpu().detach().numpy()[0]
@@ -243,7 +248,7 @@ class SoftActorCritic(CheckpointAgent):
 
     def _do_train(self, training_context: ReplayBuffer) -> NoReturn:
         curr_states, next_states, rewards, actions, dones \
-            = training_context.random_sample_transformed(self.sample_size, DEVICE)
+            = training_context.random_sample_transformed(self.sample_size, self.device)
 
         curr_value = self.value_network.forward(curr_states).view(-1)
         next_value = self.target_value_network.forward(next_states).view(-1)

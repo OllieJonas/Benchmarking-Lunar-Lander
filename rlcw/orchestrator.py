@@ -27,7 +27,8 @@ class Orchestrator:
 
         self.should_load_from_checkpoint = config["overall"]["checkpoint"]["load"]["enabled"]
         self.should_use_latest_run_for_load = config["overall"]["checkpoint"]["load"]["use_latest"]
-        self.load_directory = config["overall"]["checkpoint"]["load"]["custom_dir"]
+        self.should_use_relative_path = config["overall"]["checkpoint"]["load"]["custom"]["use_relative"]
+        self.load_directory = config["overall"]["checkpoint"]["load"]["custom"]["path"]
 
         # runner stuff
         self.should_render = config["overall"]["output"]["render"]
@@ -57,6 +58,7 @@ class Orchestrator:
         loader = Loader(enabled=self.should_load_from_checkpoint,
                         agent_name=self.agent.name(),
                         use_latest=self.should_use_latest_run_for_load,
+                        use_relative=self.should_use_relative_path,
                         path=self.load_directory)
 
         loader.load(self.agent)
@@ -69,7 +71,8 @@ class Orchestrator:
                                                 max_episodes=self.max_episodes,
                                                 start_training_timesteps=self.start_training_timesteps,
                                                 training_ctx_capacity=self.training_ctx_capacity,
-                                                should_save_checkpoints=self.should_save_checkpoints)
+                                                should_save_checkpoints=self.should_save_checkpoints,
+                                                checkpoint_history=self.save_checkpoint_history)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
         self.results = runner.run()
@@ -93,19 +96,32 @@ class Orchestrator:
 
 
 class Loader:
-    def __init__(self, enabled, agent_name, use_latest, path):
+    def __init__(self, enabled, agent_name, use_relative, use_latest, path):
         self.LOGGER = logger.init_logger("CheckpointLoader")
-
         self.is_enabled = enabled
-        self.path = util.get_latest_policies_for(agent_name) if use_latest else path
+        self.agent_name = agent_name
+        self.use_relative = use_relative
+        self.use_latest = use_latest
+        self.path = path
 
     def load(self, agent):
         if self.is_enabled:
             if not isinstance(agent, CheckpointAgent):
                 self.LOGGER.warning("Can't load checkpoints for this agent! Disabling...")
             else:
-                self.LOGGER.info(f"Loading enabled! Loading from {self.path}...")
+                path = self._get_path()
+                self.LOGGER.info(f"Loading enabled! Loading from {path}...")
                 agent.load(self.path)
+
+    def _get_path(self):
+        latest_policies = util.get_latest_policies_for(self.agent_name)
+
+        if latest_policies is None:
+            self.LOGGER.critical(f"Can't find a policy for agent with name {self.agent_name}! Shutting down ...")
+            exit(1)
+
+        return util.get_latest_policies_for(self.agent_name) if self.use_latest \
+            else f"{util.get_project_root_path() if self.use_relative else '/'}{self.path}"
 
 
 class Results:

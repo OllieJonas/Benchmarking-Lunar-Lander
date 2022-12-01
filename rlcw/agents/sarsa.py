@@ -12,8 +12,6 @@ import util
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
-DEVICE = util.get_torch_device()
-
 
 # neural network as q-table for lunar landing to too big
 class ActionValueNetwork(nn.Module):
@@ -55,7 +53,7 @@ class SarsaAgent(CheckpointAgent):
     def __init__(self, logger, action_space, state_space, config):
         super().__init__(logger, action_space, config)
 
-        self.network = ActionValueNetwork(state_space, action_space).to(DEVICE)
+        self.network = ActionValueNetwork(state_space, action_space).to(self.device)
 
         self.optimizer = optim.Adam(self.network.parameters(), lr=0.001,
                                     betas=(0.001, 0.00199),
@@ -183,10 +181,10 @@ class SarsaAgent(CheckpointAgent):
         terminals = experiences[4]
         batch_size = states.shape[0]
 
-        td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, \
-                                             network, current_q, tau)
+        td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, network,
+                                             current_q, tau)
 
-        loss = criterion(td_estimate.double().to(DEVICE), td_target.to(DEVICE))
+        loss = criterion(td_estimate.double().to(self.device), td_target.to(self.device))
         loss.backward()
 
         return (loss / batch_size).detach().numpy()

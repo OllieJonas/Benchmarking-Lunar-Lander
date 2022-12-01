@@ -35,6 +35,10 @@ def get_latest_run_of(name: str):
 
 def get_latest_policies_for(name: str):
     latest = get_latest_run_of(name)
+
+    if not latest:
+        return None
+
     return latest
 
 
@@ -51,7 +55,7 @@ def get_curr_session_output_path():
     global CURR_DATE_TIME
 
     if CURR_DATE_TIME is None:
-        CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
+        CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%d-%m-%Y"))}'
 
     return f'{get_output_root_path()}{AGENT_NAME} - {CURR_DATE_TIME}/'
 
