@@ -5,7 +5,7 @@ from abc import abstractmethod, ABC
 
 import util
 
-from rlcw.replay_buffer import ReplayBuffer
+from replay_buffer import ReplayBuffer
 
 NOT_IMPLEMENTED_MESSAGE = "This hasn't been implemented yet! :("
 

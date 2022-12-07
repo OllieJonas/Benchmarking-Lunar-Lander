@@ -13,25 +13,27 @@ class ReplayBuffer(object):
         # buff
         self.states = np.zeros((self.max_capacity, *self.input_dims))
         self.next_states = np.zeros((self.max_capacity, *self.input_dims))
-        self.actions = np.zeros((self.max_capacity, 2))
+        # self.actions = np.zeros((self.max_capacity, 2))
+        self.actions = np.zeros(self.max_capacity)
         self.rewards = np.zeros(self.max_capacity)
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 
         self.cnt = 0
 
-    def add(self, state, next_state, action, reward, done):
+    def add(self, state, next_state, action, reward, done, invert_done=True):
         index = self.cnt % self.max_capacity
         self.states[index] = state
         self.next_states[index] = next_state
         self.actions[index] = action
         self.rewards[index] = reward
-        self.dones[index] = 1 - done
+
+        self.dones[index] = 1 - done if invert_done else done
         self.cnt += 1
 
     def random_sample(self, sample_size):
         size = min(self.cnt, self.max_capacity)
 
-        batch = np.random.choice(size, sample_size)
+        batch = np.random.choice(size, sample_size, replace=False)
 
         states = self.states[batch]
         actions = self.actions[batch]

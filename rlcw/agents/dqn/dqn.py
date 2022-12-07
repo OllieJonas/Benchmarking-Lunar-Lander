@@ -1,42 +1,43 @@
+import copy
 from typing import NoReturn
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from copy import deepcopy
+import numpy as np
 
 from agents.abstract_agent import CheckpointAgent
 from agents.dqn.policy import EpsilonGreedyPolicy
 from replay_buffer import ReplayBuffer
 
 
-class SimpleNetwork(nn.Module):
-
-    def __init__(self, input_size, hidden_size, no_actions):
-        super(SimpleNetwork, self).__init__()
+class DeepQNetwork(nn.Module):
+    def __init__(self, input_size, no_actions, hidden_1_dims=256, hidden_2_dims=256):
+        super(DeepQNetwork, self).__init__()
+        self.input_size = input_size
+        self.no_actions = no_actions
 
         self.layers = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
+            nn.Linear(input_size, hidden_1_dims),
             nn.ReLU(),
-            nn.Linear(hidden_size, hidden_size),
+            nn.Linear(hidden_1_dims, hidden_2_dims),
             nn.ReLU(),
-            nn.Linear(hidden_size, no_actions),
+            nn.Linear(hidden_2_dims, no_actions)
         )
 
-    def forward(self, x):
-        return self.layers(x)
+    def forward(self, state):
+        return self.layers.forward(state)
 
 
-class DeepQNetwork(CheckpointAgent):
+class DQN(CheckpointAgent):
 
-    def __init__(self, logger, action_space, observation_space, config):
+    def __init__(self, logger, action_space, state_space, config):
         super().__init__(logger, action_space, config)
+
         # config vars
 
         self.learning_rate = config["learning_rate"]
         self.batch_size = config["batch_size"]
-        self.sample_size = config["sample_size"]
         self.hidden_size = config["hidden_layer_size"]
         self.update_count = config["update_count"]
 
@@ -44,89 +45,90 @@ class DeepQNetwork(CheckpointAgent):
         self.epsilon_decay = config["epsilon_decay"]
         self.epsilon_min = config["epsilon_min"]
         self.gamma = config["gamma"]
-        self.tau = config["tau"]
+
+        self.logger.info(f"DQN Config: {config}")
 
         self.no_actions = action_space.n
 
-        self.value_network = SimpleNetwork(observation_space.shape[0], self.hidden_size, self.no_actions)\
+        self.q_network = DeepQNetwork(*state_space.shape, self.no_actions,
+                                      hidden_1_dims=self.hidden_size, hidden_2_dims=self.hidden_size)\
             .to(self.device)
 
-        self.target_value_network = None
+        self.target_q_network = DeepQNetwork(*state_space.shape, self.no_actions,
+                                             hidden_1_dims=self.hidden_size, hidden_2_dims=self.hidden_size)\
+            .to(self.device)
+
         self._sync_target_network()
 
-        self.value_network_optimiser = optim.Adam(self.value_network.parameters(), lr=self.learning_rate)
+        self.value_network_optimiser = optim.Adam(self.q_network.parameters(), lr=self.learning_rate)
 
         self.criterion = nn.HuberLoss()
 
         self._batch_cnt = 0
         self._update_cnt = 0
 
-        self.policy = EpsilonGreedyPolicy(self.epsilon, self.no_actions)
+        self.policy = EpsilonGreedyPolicy(self.epsilon, self.no_actions, self.device)
 
     def _sync_target_network(self):
-        self.target_value_network = deepcopy(self.value_network)
+        self.logger.info(f"Epsilon: {self.epsilon}")
+        self.target_q_network = copy.deepcopy(self.q_network)
 
     def save(self):
-        pass
+        self.save_checkpoint(self.q_network, "ValueNetwork")
+        self.save_checkpoint(self.target_q_network, "TargetValueNetwork")
 
     def load(self, path):
-        pass
+        self.load_checkpoint(self.q_network, path, "ValueNetwork")
+        self.load_checkpoint(self.target_q_network, path, "TargetValueNetwork")
 
     def name(self) -> str:
         return "DQN"
 
     def get_action(self, state):
-        state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+        if np.random.random() > self.epsilon:
+            state = torch.tensor([state], dtype=torch.float).to(self.device)
+            actions = self.q_network.forward(state)
+            action = torch.argmax(actions).item()
+        else:
+            action = np.random.choice(range(self.action_space.n))
 
-        with torch.no_grad():
-            action_values = self.value_network.forward(state)
-
-        return self.policy.get_action(state)
+        return action
 
     def train(self, training_context: ReplayBuffer) -> NoReturn:
-        if self._batch_cnt < self.batch_size:
-            self._batch_cnt += 1
-        else:
+        if training_context.cnt >= self.batch_size:
             self._do_train(training_context)
-            self._batch_cnt = 0
-        pass
 
     def _do_train(self, training_context):
-        states, next_states, rewards, actions, dones = \
-            training_context.random_sample(self.sample_size, self.device)
+        states, actions, rewards, next_states, dones = \
+            training_context.random_sample(self.batch_size)
 
-        predicted = self.value_network.forward(states).gather(actions, 1)
-
-        self.value_network.train()
-        self.target_value_network.eval()
-
-        with torch.no_grad():
-            next_values = self.target_value_network.forward(next_states).detach().max(1)[0].unsqueeze(1)
-
-        labels = rewards + (self.gamma * next_values * (1 - dones))
-
-        loss = self.criterion(predicted, labels).to(self.device)
         self.value_network_optimiser.zero_grad()
+
+        if self._update_cnt % self.update_count == 0:
+            self._sync_target_network()
+
+        states = torch.tensor(states, dtype=torch.float32).to(self.device)
+        # actions = torch.tensor(actions, dtype=torch.int32).to(self.device)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
+        next_states = torch.tensor(next_states, dtype=torch.float32).to(self.device)
+        dones = torch.tensor(dones, dtype=torch.bool).to(self.device)
+
+        indices = np.arange(self.batch_size)
+
+        q_curr = self.q_network.forward(states)[indices, actions]
+        q_next = self.target_q_network.forward(next_states).max(dim=1)[0]
+
+        q_next[dones] = 0.0
+
+        q_target = rewards + self.gamma * q_next
+
+        loss = self.criterion(q_target, q_curr).to(self.device)
         loss.backward()
         self.value_network_optimiser.step()
+        self._update_cnt += 1
 
-        self._soft_copy(self.value_network, self.target_value_network, self.tau)
+        self._decay_epsilon()
 
-        self.epsilon = max(self.epsilon - self.epsilon_decay, self.epsilon_min)
-
-        if self._update_cnt >= self.update_count:
-            self._sync_target_network()
-            self._update_cnt = 0
-        else:
-            self._update_cnt += 1
-
-    @staticmethod
-    def _soft_copy(v, t_v, tau):
-        value_state_dict = dict(v.named_parameters())
-        target_value_state_dict = dict(t_v.named_parameters())
-
-        for key in value_state_dict:
-            value_state_dict[key] = tau * value_state_dict[key].clone() + (1 - tau) * target_value_state_dict[
-                key].clone()
-
-        t_v.load_state_dict(value_state_dict)
+    def _decay_epsilon(self):
+        if self.epsilon > self.epsilon_min:
+            self.epsilon -= self.epsilon_decay

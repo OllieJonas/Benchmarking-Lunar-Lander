@@ -1,6 +1,6 @@
 overall:
-  agent_name: "ddpg"
-  env_name: "LunarLanderContinuous-v2"
+  agent_name: "dqn"
+  env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:
     save:
@@ -49,16 +49,15 @@ agents:
     actor_noise: 0.000001
     no_hidden_neurons: 256
   dqn:
-    learning_rate: 0.00005
+    invert_done: false
+    learning_rate: 0.001
     batch_size: 64
-    sample_size: 50
-    hidden_layer_size: 64
-    update_count: 4
-    epsilon: 0.99
-    epsilon_decay: 0.0001
+    hidden_layer_size: 128
+    update_count: 500
+    epsilon: 1.0
+    epsilon_decay: 0.00005
     epsilon_min: 0.01
-    gamma: 0.99
-    tau: 0.0003
+    gamma: 0.999
   sarsa:
     gamma: 0.99
     tau: 0.01

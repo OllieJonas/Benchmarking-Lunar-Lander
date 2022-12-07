@@ -1,3 +1,4 @@
+import copy
 import random
 
 import numpy as np
@@ -17,7 +18,10 @@ class Orchestrator:
 
         self.env = env
         self.agent = agent
+
+        self.agent_config = config["agents"][agent.name().lower()]
         self.config = config
+
         self.episodes_to_save = episodes_to_save
         self.seed = seed
 
@@ -40,6 +44,8 @@ class Orchestrator:
         self.max_timesteps = config["overall"]["timesteps"]["max"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
+
+        self.should_invert_done = self.agent_config.get("invert_done", True)
 
         self.time_taken = 0.
         self.results = None
@@ -74,6 +80,7 @@ class Orchestrator:
                         training_ctx_capacity=self.training_ctx_capacity,
                         should_save_checkpoints=self.should_save_checkpoints,
                         save_every=self.save_every,
+                        should_invert_done=self.should_invert_done,
                         verbose=self.verbose)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')

@@ -11,6 +11,7 @@ import util
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
+
 class Value(nn.Module):
 
     def __init__(self, no_states, no_hidden_neurons, no_layers=1, initial_weight=3e-3):

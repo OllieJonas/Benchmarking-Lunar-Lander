@@ -1,9 +1,5 @@
-import numpy as np
 from IPython import display
 from matplotlib import pyplot as plt
-
-from tqdm import tqdm
-from pympler import muppy, summary
 
 import logger
 import util
@@ -17,7 +13,7 @@ class Runner(object):
 
     def __init__(self, env, agent, seed: int, should_render, episodes_to_save, max_timesteps,
                  max_episodes, start_training_timesteps, training_ctx_capacity, should_save_checkpoints,
-                 save_every, verbose=False):
+                 save_every, should_invert_done, verbose=False):
         self.LOGGER = logger.init_logger("Runner")
 
         self.env = env
@@ -36,6 +32,8 @@ class Runner(object):
 
         self.should_save_checkpoints = should_save_checkpoints
         self.save_every = save_every
+
+        self.should_invert_done = should_invert_done
 
         self.verbose = verbose
 
@@ -74,7 +72,7 @@ class Runner(object):
                 next_state,
                 action,
                 reward,
-                int(terminated))
+                int(terminated), invert_done=self.should_invert_done)
 
             if t > self.start_training_timesteps:
                 self.agent.train(training_context)

@@ -13,7 +13,7 @@ from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
 from agents.ddpg.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
-from agents.dqn.dqn import DeepQNetwork
+from agents.dqn.dqn import DQN
 from orchestrator import Orchestrator
 
 LOGGER: logging.Logger
@@ -62,7 +62,7 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, state_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, state_space, agents_config):
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -73,15 +73,15 @@ def get_agent(name: str, action_space, state_space, agents_config) -> AbstractAg
     name = name.lower()
 
     if name == "random":
-        return RandomAgent(_logger, action_space, cfg)
+        return RandomAgent(_logger, action_space, cfg), cfg
     elif name == "sarsa":
-        return SarsaAgent(_logger, action_space, state_space, cfg)
+        return SarsaAgent(_logger, action_space, state_space, cfg), cfg
     elif name == "ddpg":
-        return DdpgAgent(_logger, action_space, state_space, cfg)
+        return DdpgAgent(_logger, action_space, state_space, cfg), cfg
     elif name == "sac":
-        return SoftActorCritic(_logger, action_space, state_space, cfg)
+        return SoftActorCritic(_logger, action_space, state_space, cfg), cfg
     elif name == "dqn":
-        return DeepQNetwork(_logger, action_space, state_space, cfg)
+        return DQN(_logger, action_space, state_space, cfg), cfg
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -123,7 +123,7 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     if not torch.cuda.is_available():
-        LOGGER.warning("CUDA is not available for Torch - Please check your installation!")
+        LOGGER.warning("CUDA is not available for Torch - Running on CPU ...")
     else:
         LOGGER.info("CUDA is enabled!")
 
@@ -135,7 +135,7 @@ def setup():
         max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
+    agent, _ = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
 
     return env, agent, config, save_partitions
 
