@@ -72,9 +72,9 @@ class Runner(object):
             training_context.add(
                 state,
                 next_state,
-                reward,
                 action,
-                terminated)
+                reward,
+                int(terminated))
 
             if t > self.start_training_timesteps:
                 self.agent.train(training_context)

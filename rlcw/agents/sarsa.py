@@ -58,6 +58,7 @@ class SarsaAgent(CheckpointAgent):
         self.optimizer = optim.Adam(self.network.parameters(), lr=0.001,
                                     betas=(0.001, 0.00199),
                                     eps=1e-8)
+
         self.criterion = nn.MSELoss()
 
         self.num_actions = action_space.n
@@ -82,7 +83,7 @@ class SarsaAgent(CheckpointAgent):
         _state = torch.Tensor(state).to(self.device)
 
         action_values = self.network.forward(_state)
-        probs_batch = self.softmax(action_values, self.tau).cpu().detach().numpy()
+        probs_batch = self.softmax(action_values, self.device, self.tau).cpu().detach().numpy()
 
         action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
 
@@ -101,19 +102,19 @@ class SarsaAgent(CheckpointAgent):
 
         current_q = deepcopy(self.network)
         for _ in range(self.num_replay):
-            experiences = training_context.random_sample_as_tensors(self.sample_size, self.device)
-
-            self.loss += self.optimize_network(experiences, self.gamma, self.optimizer, self.network, current_q,
+            self.loss += self.optimize_network(training_context, self.gamma, self.optimizer, self.network, current_q,
                                                self.tau,
                                                self.criterion)
 
     @staticmethod
-    def softmax(action_values, tau=1.0):
+    def softmax(action_values, device, tau=1.0):
         """
         Args:
             action_values (Tensor array): A 2D array of shape (batch_size, num_actions).
                         The action-values computed by an action-value network.
+            device (PyTorch device): Device to run this on.
             tau (float): The temperature parameter scalar.
+
         Returns:
             A 2D Tensor array of shape (batch_size, num_actions). Where each column is a probability distribution
             over the actions representing the get_action.
@@ -148,21 +149,24 @@ class SarsaAgent(CheckpointAgent):
             target_vec (Tensor array): The TD Target for actions taken, of shape (batch_size,)
             estimate_vec (Tensor array): The TD estimate for actions taken, of shape (batch_size,)
         """
+        _next_states = torch.Tensor(next_states).to(self.device)
+        q_next_mat = current_q.forward(_next_states).detach()
 
-        q_next_mat = current_q.forward(next_states).detach()
-
-        probs_mat = self.softmax(q_next_mat, tau)
+        probs_mat = self.softmax(q_next_mat, self.device, tau)
         v_next_vec = torch.zeros((q_next_mat.shape[0]), dtype=torch.float64).detach()
 
         if terminals.any() == 1:
             terminals = [1]
         else:
             terminals = [0]
+
         v_next_vec = torch.sum(probs_mat * q_next_mat, dim=1) * (1 - torch.tensor(terminals).to(self.device))
 
-        target_vec = torch.tensor(rewards) + (discount * v_next_vec)
+        target_vec = torch.tensor(rewards).to(self.device) + (discount * v_next_vec)
 
-        q_mat = network.forward(states)
+        _states = torch.Tensor(states).to(self.device)
+
+        q_mat = network.forward(_states)
 
         batch_indices = torch.arange(q_mat.shape[0])
 
@@ -170,11 +174,10 @@ class SarsaAgent(CheckpointAgent):
 
         return target_vec, estimate_vec
 
-    def optimize_network(self, experiences, discount, optimizer, network, current_q, tau, criterion):
+    def optimize_network(self, training_context, discount, optimizer, network, current_q, tau, criterion):
         """
         Args:
-            experiences (Numpy array): The batch of experiences including the states, actions,
-                                    rewards, terminals, and next_states.
+            training_context (ReplayBuffer): The ReplayBuffer
             discount (float): The discount factor.
             network (ActionValueNetwork): The latest state of the network that is getting replay updates.
             current_q (ActionValueNetwork): The fixed network used for computing the targets,
@@ -182,12 +185,10 @@ class SarsaAgent(CheckpointAgent):
         Return:
             Loss (float): The loss value for the current batch.
         """
-        states = experiences[0]
-        actions = experiences[1]
-        rewards = experiences[2]
-        next_states = experiences[3]
 
-        terminals = experiences[4]
+        states, actions, rewards, next_states, terminals = training_context.random_sample(
+            self.sample_size)
+
         batch_size = states.shape[0]
 
         td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, network,
@@ -196,4 +197,4 @@ class SarsaAgent(CheckpointAgent):
         loss = criterion(td_estimate.double().to(self.device), td_target.to(self.device))
         loss.backward()
 
-        return (loss / batch_size).detach().numpy()
+        return (loss / batch_size).cpu().detach().numpy()
