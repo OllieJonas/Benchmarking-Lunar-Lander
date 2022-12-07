@@ -44,16 +44,13 @@ class CheckpointAgent(AbstractAgent, ABC):
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
     @staticmethod
-    def _get_policy_path():
-        return f"{util.get_curr_session_output_path()}policies/"
-
-    @staticmethod
     def save_checkpoint(net, file_name):
-        torch.save(net.state_dict(), util.with_file_extension(
-            f"{CheckpointAgent._get_policy_path()}{file_name}", ".mdl"))
+        path = util.with_file_extension(
+            f"{util.get_curr_session_output_path()}policies/{file_name}", ".pth")
+        torch.save(net.state_dict(), path)
 
     @staticmethod
     def load_checkpoint(net, path, file_name):
         net.load_state_dict(torch.load(util.with_file_extension(
-            f"{path}{file_name}", ".mdl")))
+            f"{path}{file_name}", ".pth")))
 

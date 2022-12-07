@@ -7,7 +7,7 @@ import evaluator as eval
 import logger
 import util
 from agents.abstract_agent import AbstractAgent, CheckpointAgent
-from runners import RunnerFactory
+from runners import Runner
 
 
 class Orchestrator:
@@ -21,12 +21,14 @@ class Orchestrator:
         self.episodes_to_save = episodes_to_save
         self.seed = seed
 
+        self.verbose = config["overall"]["output"]["verbose"]
+
         # checkpoint stuff
         self.should_save_checkpoints = config["overall"]["checkpoint"]["save"]["enabled"]
-        self.save_checkpoint_history = config["overall"]["checkpoint"]["save"]["history"]
+        self.save_every = config["overall"]["checkpoint"]["save"]["every"]
 
         self.should_load_from_checkpoint = config["overall"]["checkpoint"]["load"]["enabled"]
-        self.should_use_latest_run_for_load = config["overall"]["checkpoint"]["load"]["use_latest"]
+        self.should_use_latest_run_for_load = config["overall"]["checkpoint"]["load"]["use_latest_run"]
         self.should_use_relative_path = config["overall"]["checkpoint"]["load"]["custom"]["use_relative"]
         self.load_directory = config["overall"]["checkpoint"]["load"]["custom"]["path"]
 
@@ -39,7 +41,6 @@ class Orchestrator:
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
 
-        self.runner_factory = RunnerFactory()
         self.time_taken = 0.
         self.results = None
 
@@ -64,15 +65,16 @@ class Orchestrator:
         loader.load(self.agent)
 
     def run(self):
-        runner = self.runner_factory.get_runner(self.env, self.agent, self.seed,
-                                                episodes_to_save=self.episodes_to_save,
-                                                should_render=self.should_render,
-                                                max_timesteps=self.max_timesteps,
-                                                max_episodes=self.max_episodes,
-                                                start_training_timesteps=self.start_training_timesteps,
-                                                training_ctx_capacity=self.training_ctx_capacity,
-                                                should_save_checkpoints=self.should_save_checkpoints,
-                                                checkpoint_history=self.save_checkpoint_history)
+        runner = Runner(self.env, self.agent, self.seed,
+                        episodes_to_save=self.episodes_to_save,
+                        should_render=self.should_render,
+                        max_timesteps=self.max_timesteps,
+                        max_episodes=self.max_episodes,
+                        start_training_timesteps=self.start_training_timesteps,
+                        training_ctx_capacity=self.training_ctx_capacity,
+                        should_save_checkpoints=self.should_save_checkpoints,
+                        save_every=self.save_every,
+                        verbose=self.verbose)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
         self.results = runner.run()
@@ -114,70 +116,20 @@ class Loader:
                 agent.load(self.path)
 
     def _get_path(self):
-        latest_policies = util.get_latest_policies_for(self.agent_name)
+        latest_policies = self._get_latest_policies_for(self.agent_name)
 
-        if latest_policies is None:
-            self.LOGGER.critical(f"Can't find a policy for agent with name {self.agent_name}! Shutting down ...")
+        if latest_policies is None and self.use_latest:
+            self.LOGGER.critical(f"Can't find a run for agent with name {self.agent_name}! Shutting down ...")
             exit(1)
 
-        return util.get_latest_policies_for(self.agent_name) if self.use_latest \
+        return latest_policies if self.use_latest \
             else f"{util.get_project_root_path() if self.use_relative else '/'}{self.path}"
 
+    @staticmethod
+    def _get_latest_policies_for(name: str):
+        latest = util.get_latest_run_of(name)
 
-class Results:
-    """
-    idk how this is going to interact with pytorch cuda parallel stuff, so maybe we'll have to forget this? atm,
-    this is responsible for recording results.
-    """
-
-    class Timestep:
-        def __init__(self, state, action, reward):
-            self.state = state
-            self.action = action
-            self.reward = reward
-
-        def __repr__(self):
-            return f'<s: {self.state}, a: {self.action}, r: {self.reward}>'
-
-        def clone(self):
-            return Results.Timestep(self.state, self.action, self.reward)
-
-    def __init__(self, agent_name, date_time):
-        self.agent_name = agent_name
-        self.date_time = date_time
-
-        self.timestep_buffer = []
-        self.curr_episode = 0
-
-        self.results = []
-
-        self.results_detailed = {}
-
-    def __repr__(self):
-        return self.results.__str__()
-
-    def add(self, episode: int, timestep: Timestep, store_detailed: bool):
-        if episode == self.curr_episode:
-            self.timestep_buffer.append(timestep)
+        if not latest:
             return None
-        else:
-            if store_detailed:
-                self.results_detailed[episode] = [t.clone() for t in self.timestep_buffer]
 
-            self.curr_episode = episode
-
-            rewards = np.fromiter(map(lambda t: t.reward, self.timestep_buffer), dtype=float)
-            cumulative = np.sum(rewards)
-            avg = np.average(rewards)
-            no_timesteps = rewards.size
-
-            episode_summary = (cumulative, avg, no_timesteps)
-            self.results.append(episode_summary)
-            # flush buffer
-            self.timestep_buffer = []
-
-            return episode_summary
-
-    def save_to_disk(self):
-        file_name = f'{self.agent_name} - {self.date_time}'
-        util.save_file("results", file_name, self.results.__str__())
+        return latest

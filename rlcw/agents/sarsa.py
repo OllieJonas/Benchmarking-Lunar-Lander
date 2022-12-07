@@ -17,7 +17,7 @@ from replay_buffer import ReplayBuffer
 class ActionValueNetwork(nn.Module):
 
     def __init__(self, state_space, action_space, no_layers=1, initial_weight=3e-3):
-        super().__init__()
+        super(ActionValueNetwork, self).__init__()
 
         if no_layers <= 0:
             raise ValueError("can't be less than 0!")
@@ -37,7 +37,6 @@ class ActionValueNetwork(nn.Module):
         self.float()
 
     def forward(self, state):
-        state = torch.Tensor(state)
         inp = nn.functional.relu(self.input_layer(state))
         hidden = nn.functional.relu(self.hidden_layer(inp))
         out = self.output_layer(hidden)
@@ -47,6 +46,7 @@ class ActionValueNetwork(nn.Module):
 
 # Technically Deep/expected SARSA but t'is late so just SARSA
 class SarsaAgent(CheckpointAgent):
+
     def name(self):
         return "sarsa"
 
@@ -73,33 +73,42 @@ class SarsaAgent(CheckpointAgent):
         self.loss = 0
 
     def save(self):
-        pass
+        self.save_checkpoint(self.network, "ActionValue")
 
     def load(self, path):
-        pass
+        self.load_checkpoint(self.network, path, "ActionValue")
 
     def get_action(self, state):
+        _state = torch.Tensor(state).to(self.device)
 
-        action_values = self.network.forward(state)
-        probs_batch = self.softmax(action_values, self.tau).detach().numpy()
+        action_values = self.network.forward(_state)
+        probs_batch = self.softmax(action_values, self.tau).cpu().detach().numpy()
 
         action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
+
         return action
 
     def train(self, training_context: ReplayBuffer):
+        if training_context.cnt < self.batch_size:
+            return
+        else:
+            self._do_train(training_context)
 
-        if training_context.cnt < self.replay_buffer.batch_size:
+    def _do_train(self, training_context: ReplayBuffer):
+
+        if training_context.cnt < self.batch_size:
             return
 
         current_q = deepcopy(self.network)
         for _ in range(self.num_replay):
-            experiences = training_context.random_sample(self.sample_size)
+            experiences = training_context.random_sample_as_tensors(self.sample_size, self.device)
 
             self.loss += self.optimize_network(experiences, self.gamma, self.optimizer, self.network, current_q,
                                                self.tau,
                                                self.criterion)
 
-    def softmax(self, action_values, tau=1.0):
+    @staticmethod
+    def softmax(action_values, tau=1.0):
         """
         Args:
             action_values (Tensor array): A 2D array of shape (batch_size, num_actions).
@@ -149,7 +158,7 @@ class SarsaAgent(CheckpointAgent):
             terminals = [1]
         else:
             terminals = [0]
-        v_next_vec = torch.sum(probs_mat * q_next_mat, dim=1) * (1 - torch.tensor(terminals))
+        v_next_vec = torch.sum(probs_mat * q_next_mat, dim=1) * (1 - torch.tensor(terminals).to(self.device))
 
         target_vec = torch.tensor(rewards) + (discount * v_next_vec)
 

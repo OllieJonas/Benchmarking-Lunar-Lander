@@ -5,7 +5,7 @@ author: Fraser
 import numpy as np
 
 
-class ActionNoise(object):
+class OUNoise(object):
     def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None):
         self.theta = theta
         self.mu = mu
@@ -17,6 +17,9 @@ class ActionNoise(object):
         self.reset()
 
     def __call__(self):
+        return self.get_action()
+
+    def get_action(self):
         x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
             self.sigma * np.sqrt(self.dt) * \
             np.random.normal(size=self.mu.shape)

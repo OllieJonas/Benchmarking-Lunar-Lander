@@ -14,7 +14,7 @@ using_jupyter = False
 
 def with_file_extension(name, extension):
     extension = extension if extension.startswith(".") else f".{extension}"
-    return f'name {"" if name.endswith(extension) else extension}'
+    return f'{name}{"" if name.endswith(extension) else extension}'
 
 
 def make_dir(name: str):
@@ -29,16 +29,7 @@ def get_latest_run_of(name: str):
     potential_candidates = sorted({s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]},
                                   key=lambda s: datetime.strptime(s.split(" - ")[1].strip(), DATE_TIME_FORMAT),
                                   reverse=True)
-    return f"potential_candidates[0]/" if potential_candidates else ""
-
-
-def get_latest_policies_for(name: str):
-    latest = get_latest_run_of(name)
-
-    if not latest:
-        return None
-
-    return latest
+    return f"{potential_candidates[0]}/" if potential_candidates else ""
 
 
 # -------------------------------- PATHS --------------------------------
@@ -84,3 +75,4 @@ def set_agent_name(agent_name):
 
 # -------------------------------- MATHS --------------------------------
 MIN_INT = -2147483648  # just a small af number
+MAX_INT = 2147483647  # just a small af number

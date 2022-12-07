@@ -2,7 +2,10 @@ gym~=0.26.2
 swig~=4.1.0
 PyYAML~=6.0
 matplotlib~=3.6.2
-ipython~=8.6.0
-numpy~=1.23.4
+ipython==8.7.0
+numpy==1.23.5
 torch~=1.13.0
 moviepy~=1.0.3
+tqdm~=4.64.1
+Pympler~=1.0.1
+pyprof2calltree~=1.4.5

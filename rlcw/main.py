@@ -5,6 +5,8 @@ import torch
 import yaml
 import util
 import logger
+import cProfile as profile
+import pstats
 
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
@@ -33,11 +35,30 @@ def enable_jupyter(value: bool = True):
 
 def main():
     env, agent, config, episodes_to_save = setup()
+
+    verbose = config["overall"]["output"]["verbose"]
+    profiler = None
+
+    if verbose:
+        LOGGER.debug(f"Creating profiler...")
+        profiler = profile.Profile()
+
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
+
     orchestrator = Orchestrator(
         env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
     orchestrator.load()
+
+    if verbose:
+        profiler.enable()
+
     orchestrator.run()
+
+    if verbose:
+        profiler.disable()
+        stats = pstats.Stats(profiler).strip_dirs().sort_stats("cumtime")
+        stats.dump_stats(f"{util.get_output_root_path()}logs/time.dmp")
+
     orchestrator.eval()
 
 
