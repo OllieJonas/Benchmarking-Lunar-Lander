@@ -62,10 +62,6 @@ class Evaluator:
         if self.should_save_csv:
             name = "results.csv"
 
-            cumulative_rewards = ["Cumulative Rewards"] + cumulative_rewards
-            average_rewards = ["Average Rewards"] + average_rewards
-            no_timesteps = ["No Timesteps"] + no_timesteps
-
             np.savetxt(_get_csv_file_path("results.csv"),
                        [_ for _ in zip(cumulative_rewards, average_rewards, no_timesteps)],
                        delimiter=', ',
