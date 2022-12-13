@@ -1,6 +1,3 @@
-from IPython import display
-from matplotlib import pyplot as plt
-
 import logger
 import util
 from agents.abstract_agent import CheckpointAgent

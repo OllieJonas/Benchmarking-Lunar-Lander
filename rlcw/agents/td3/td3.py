@@ -43,8 +43,6 @@ class Td3Agent(CheckpointAgent):
         self.actor_one, self.actor_one_optim = None, None
         self.min_action, self.max_action = None, None
 
-
-
     def assign_env_dependent_variables(self, action_space, state_space):
         self.min_action, self.max_action = action_space.low, action_space.high
 

@@ -1,5 +1,5 @@
 overall:
-  agent_name: "dqn"
+  agent_name: "random"
   env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:

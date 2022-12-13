@@ -3,12 +3,11 @@ author: Yatin & Ollie
 """
 from typing import NoReturn
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
 import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
+import torch
+import torch.nn as nn
+
 from replay_buffer import ReplayBuffer
 
 
