@@ -1,19 +1,20 @@
+import cProfile as profile
 import logging
+import pstats
 
 import gym
 import torch
 import yaml
-import util
-import logger
-import cProfile as profile
-import pstats
 
-from agents.abstract_agent import AbstractAgent
-from agents.random import RandomAgent
-from agents.sarsa import SarsaAgent
+import logger
+import util
+
 from agents.ddpg.ddpg import DdpgAgent
-from agents.sac import SoftActorCritic
 from agents.dqn.dqn import DQN
+from agents.td3.td3 import Td3Agent
+from agents.random import RandomAgent
+from agents.sac import SoftActorCritic
+from agents.sarsa import SarsaAgent
 from orchestrator import Orchestrator
 
 LOGGER: logging.Logger
@@ -78,6 +79,8 @@ def get_agent(name: str, action_space, state_space, agents_config):
         return SarsaAgent(_logger, action_space, state_space, cfg), cfg
     elif name == "ddpg":
         return DdpgAgent(_logger, action_space, state_space, cfg), cfg
+    elif name == "td3":
+        return Td3Agent(_logger, action_space, state_space, cfg), cfg
     elif name == "sac":
         return SoftActorCritic(_logger, action_space, state_space, cfg), cfg
     elif name == "dqn":
