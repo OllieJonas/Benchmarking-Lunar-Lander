@@ -15,5 +15,5 @@ def soft_copy(from_net, to_net, tau):
     to_net.load_state_dict(state_dict)
 
 
-def with_optim(net, lr):
-    return net, optim.Adam(params=net.parameters(), lr=lr)
+def with_optim(net, lr, device=None):
+    return net if device is None else net.to(device), optim.Adam(params=net.parameters(), lr=lr)

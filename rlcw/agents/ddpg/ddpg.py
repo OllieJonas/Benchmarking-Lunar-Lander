@@ -4,10 +4,10 @@ author: Fraser
 import numpy as np
 import torch as T
 import torch.nn.functional as F
-from torch import optim
 
+import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
-from agents.ddpg.action_noise import OUNoise
+from agents.common.noise import OUNoise
 from agents.ddpg.networks import ActorNetwork, CriticNetwork
 
 
@@ -28,17 +28,14 @@ class DdpgAgent(CheckpointAgent):
         self.layer1_size = config['layer1_size']
         self.layer2_size = config['layer2_size']
 
-        self.actor = ActorNetwork(self.input_dims, self.layer1_size,
-                                  self.layer2_size, no_actions=self.no_actions,
-                                  ).to(self.device)
+        self.actor, self.actor_optim = agent_utils.with_optim(ActorNetwork(self.input_dims, self.layer1_size,
+                                                                           self.layer2_size, no_actions=self.no_actions,
+                                                                           ), self.alpha, device=self.device)
 
-        self.actor_optimiser = optim.Adam(self.actor.parameters(), lr=self.alpha)
-
-        self.critic = CriticNetwork(self.input_dims, self.layer1_size,
-                                    self.layer2_size, no_actions=self.no_actions,
-                                    ).to(self.device)
-
-        self.critic_optimiser = optim.Adam(self.critic.parameters(), lr=self.beta)
+        self.critic, self.critic_optim = agent_utils.with_optim(CriticNetwork(self.input_dims, self.layer1_size,
+                                                                              self.layer2_size,
+                                                                              no_actions=self.no_actions,
+                                                                              ), self.beta, device=self.device)
 
         self.target_actor = ActorNetwork(self.input_dims, self.layer1_size,
                                          self.layer2_size, no_actions=self.no_actions,
@@ -50,8 +47,8 @@ class DdpgAgent(CheckpointAgent):
 
         self.noise = OUNoise(mu=np.zeros(self.no_actions))
 
-        self._hard_copy(self.actor, self.target_actor)
-        self._hard_copy(self.critic, self.target_critic)
+        agent_utils.hard_copy(self.actor, self.target_actor)
+        agent_utils.hard_copy(self.critic, self.target_critic)
 
     def name(self):
         return "ddpg"
@@ -93,13 +90,13 @@ class DdpgAgent(CheckpointAgent):
         target = target.view(self.batch_size, 1)
 
         self.critic.train()
-        self.critic_optimiser.zero_grad(set_to_none=True)
+        self.critic_optim.zero_grad(set_to_none=True)
         critic_loss = F.mse_loss(target, critic_value)
         critic_loss.backward()
-        self.critic_optimiser.step()
+        self.critic_optim.step()
         self.critic.eval()
 
-        self.actor_optimiser.zero_grad(set_to_none=True)
+        self.actor_optim.zero_grad(set_to_none=True)
 
         mu = self.actor.forward(state)
         self.actor.train()
@@ -108,29 +105,10 @@ class DdpgAgent(CheckpointAgent):
         actor_loss = T.mean(actor_loss)
         actor_loss.backward()
 
-        self.actor_optimiser.step()
+        self.actor_optim.step()
 
-        self._soft_copy(self.actor, self.target_actor)
-        self._soft_copy(self.critic, self.target_critic)
-
-    def _soft_copy(self, from_net, to_net):
-        state_dict = dict(from_net.named_parameters())
-        target_state_dict = dict(to_net.named_parameters())
-
-        for _n in state_dict:
-            state_dict[_n] = self.tau * state_dict[_n].clone() + (1 - self.tau) * target_state_dict[_n].clone()
-
-        to_net.load_state_dict(state_dict)
-
-    @staticmethod
-    def _hard_copy(from_net, to_net):
-        state_dict = dict(from_net.named_parameters())
-        target_state_dict = dict(to_net.named_parameters())
-
-        for _n in state_dict:
-            state_dict[_n] = target_state_dict[_n].clone()
-
-        to_net.load_state_dict(state_dict)
+        agent_utils.soft_copy(self.actor, self.target_actor, self.tau)
+        agent_utils.soft_copy(self.critic, self.target_critic, self.tau)
 
     def save(self):
         self.save_checkpoint(self.actor, "Actor")
