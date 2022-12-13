@@ -1,6 +1,11 @@
+import torch
+
 from typing import NoReturn
 from abc import abstractmethod, ABC
-from rlcw.replay_buffer import ReplayBuffer
+
+import util
+
+from replay_buffer import ReplayBuffer
 
 NOT_IMPLEMENTED_MESSAGE = "This hasn't been implemented yet! :("
 
@@ -11,6 +16,8 @@ class AbstractAgent(ABC):
         self.logger = logger
         self.action_space = action_space
         self.config = config
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @abstractmethod
     def name(self) -> str:
@@ -25,7 +32,7 @@ class AbstractAgent(ABC):
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
 
-class CheckpointedAbstractAgent(AbstractAgent, ABC):
+class CheckpointAgent(AbstractAgent, ABC):
 
     def __init__(self, logger, action_space, config):
         super().__init__(logger, action_space, config)
@@ -33,12 +40,17 @@ class CheckpointedAbstractAgent(AbstractAgent, ABC):
     def save(self):
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
-    def load(self):
+    def load(self, path):
         raise NotImplementedError(NOT_IMPLEMENTED_MESSAGE)
 
-    def save_checkpoint(self, net):
-        pass
+    @staticmethod
+    def save_checkpoint(net, file_name):
+        path = util.with_file_extension(
+            f"{util.get_curr_session_output_path()}policies/{file_name}", ".pth")
+        torch.save(net.state_dict(), path)
 
-    def load_checkpoint(self, net):
-        pass
+    @staticmethod
+    def load_checkpoint(net, path, file_name):
+        net.load_state_dict(torch.load(util.with_file_extension(
+            f"{path}{file_name}", ".pth")))
 

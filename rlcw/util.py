@@ -1,29 +1,35 @@
-import logging
+import copy
 import os
 import sys
-import copy
-import torch
-import numpy as np
-
 from datetime import datetime
 
 CURR_DATE_TIME = None
+DATE_TIME_FORMAT = "%H-%M-%S_%m-%d-%Y"
 AGENT_NAME = None
 
 using_jupyter = False
 
-logger_level = logging.INFO
 
 # -------------------------------- FILES --------------------------------
 
 def with_file_extension(name, extension):
     extension = extension if extension.startswith(".") else f".{extension}"
-    return f'name {"" if name.endswith(extension) else extension}'
+    return f'{name}{"" if name.endswith(extension) else extension}'
 
 
 def make_dir(name: str):
     if not os.path.exists(name):
         os.mkdir(name)
+
+
+def get_latest_run_of(name: str):
+    # it's not my code if I don't fit in a ridiculous, confusing & overly complicated one-liner >:)
+    # shame im really fighting against python to do this, man streams are so much easier >:(
+    walk = list(os.walk(get_output_root_path()))[1:]
+    potential_candidates = sorted({s[0].split("/").pop().split("\\")[0] for s in walk if name in s[0]},
+                                  key=lambda s: datetime.strptime(s.split(" - ")[1].strip(), DATE_TIME_FORMAT),
+                                  reverse=True)
+    return f"{potential_candidates[0]}/" if potential_candidates else ""
 
 
 # -------------------------------- PATHS --------------------------------
@@ -39,7 +45,7 @@ def get_curr_session_output_path():
     global CURR_DATE_TIME
 
     if CURR_DATE_TIME is None:
-        CURR_DATE_TIME = f'{str(datetime.now().strftime("%H-%M-%S_%m-%d-%Y"))}'
+        CURR_DATE_TIME = f'{str(datetime.now().strftime(DATE_TIME_FORMAT))}'
 
     return f'{get_output_root_path()}{AGENT_NAME} - {CURR_DATE_TIME}/'
 
@@ -51,17 +57,7 @@ def save_file(directory, file_name, contents):
         f.write(contents)
 
 
-def save_torch_nn(net, file_name):
-    torch.save(net.state_dict(), with_file_extension(file_name, ".mdl"))
-
-
-def load_torch_nn(net, file_name):
-    net.load_state_dict(torch.load(file_name))
-
-
-def get_torch_device():
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+# -------------------------------- JUPYTER --------------------------------
 
 def is_using_jupyter():
     return using_jupyter
@@ -77,31 +73,6 @@ def set_agent_name(agent_name):
     AGENT_NAME = agent_name
 
 
-def set_logger_level(level):
-    global logger_level
-    logger_level = level
-
-
-def init_logger(suffix: str = "") -> logging.Logger:
-    """
-    Initialises a logger. Loggers by default start with the name "RL-CW", then have a suffix. I'm thinking maybe have
-    the name of the algorithm we're implementing here?
-
-    Please only call this once in a given file, then store it for everything else.
-    """
-    NAME = "RL-CW"
-    logs_dir = f'{get_curr_session_output_path()}logs'
-    make_dir(logs_dir)
-
-    logging.basicConfig(filename=f'{logs_dir}/stdout.log', level=logger_level)
-
-    logger = logging.getLogger(f'{NAME} {suffix}')
-
-    handler = logging.StreamHandler(stream=sys.stdout)
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-
-    logger.addHandler(handler)
-
-    return logger
+# -------------------------------- MATHS --------------------------------
+MIN_INT = -2147483648  # just a small af number
+MAX_INT = 2147483647  # just a small af number

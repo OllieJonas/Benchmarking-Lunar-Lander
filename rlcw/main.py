@@ -4,21 +4,24 @@ import gym
 import torch
 import yaml
 import util
+import logger
+import cProfile as profile
+import pstats
 
 from agents.abstract_agent import AbstractAgent
 from agents.random import RandomAgent
 from agents.sarsa import SarsaAgent
-from agents.ddpg import DdpgAgent
+from agents.ddpg.ddpg import DdpgAgent
 from agents.sac import SoftActorCritic
+from agents.dqn.dqn import DQN
 from orchestrator import Orchestrator
-from util import init_logger, make_dir, set_logger_level
 
 LOGGER: logging.Logger
 
 
 def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, continuous=True, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
-        else gym.make(env_name, continuous=True, render_mode="human")
+    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+        else gym.make(env_name, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -32,31 +35,53 @@ def enable_jupyter(value: bool = True):
 
 def main():
     env, agent, config, episodes_to_save = setup()
+
+    verbose = config["overall"]["output"]["verbose"]
+    profiler = None
+
+    if verbose:
+        LOGGER.debug(f"Creating profiler...")
+        profiler = profile.Profile()
+
     LOGGER.info(f'Marking episodes {episodes_to_save} for saving...')
+
     orchestrator = Orchestrator(
         env=env, agent=agent, config=config, episodes_to_save=episodes_to_save)
+    orchestrator.load()
+
+    if verbose:
+        profiler.enable()
+
     orchestrator.run()
+
+    if verbose:
+        profiler.disable()
+        stats = pstats.Stats(profiler).strip_dirs().sort_stats("cumtime")
+        stats.dump_stats(f"{util.get_output_root_path()}logs/time.dmp")
+
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, observation_space, agents_config) -> AbstractAgent:
+def get_agent(name: str, action_space, state_space, agents_config):
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
         return <Your Agent Class>(logger, action_space, cfg)
     """
     cfg = agents_config[name] if name in agents_config else None
-    logger = util.init_logger(f'{name.upper()} (Agent)')
+    _logger = logger.init_logger(f'{name.upper()} (Agent)')
     name = name.lower()
 
     if name == "random":
-        return RandomAgent(logger, action_space, cfg)
+        return RandomAgent(_logger, action_space, cfg), cfg
     elif name == "sarsa":
-        return SarsaAgent(logger, action_space, cfg)
+        return SarsaAgent(_logger, action_space, state_space, cfg), cfg
     elif name == "ddpg":
-        return DdpgAgent(logger, action_space, cfg)
+        return DdpgAgent(_logger, action_space, state_space, cfg), cfg
     elif name == "sac":
-        return SoftActorCritic(logger, action_space, observation_space, cfg)
+        return SoftActorCritic(_logger, action_space, state_space, cfg), cfg
+    elif name == "dqn":
+        return DQN(_logger, action_space, state_space, cfg), cfg
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -79,12 +104,12 @@ def setup():
 
     _make_dirs(config, agent_name)
 
-    LOGGER = util.init_logger("Main")
+    LOGGER = logger.init_logger("Main")
 
     logger_level = logging.DEBUG if config_output["verbose"] else logging.INFO
 
     LOGGER.setLevel(logger_level)
-    util.set_logger_level(logger_level)
+    logger.set_logger_level(logger_level)
 
     # can't render in human mode and record at the same time
     should_record = config_output["save"]["recordings"]
@@ -98,7 +123,7 @@ def setup():
     LOGGER.debug(f'Config: {config}')
 
     if not torch.cuda.is_available():
-        LOGGER.warning("CUDA is not available for Torch - Please check your installation!")
+        LOGGER.warning("CUDA is not available for Torch - Running on CPU ...")
     else:
         LOGGER.info("CUDA is enabled!")
 
@@ -110,7 +135,7 @@ def setup():
         max_episodes, config_output["save"]["episodes"])
     env = _make_env(env_name, should_record, save_partitions)
 
-    agent = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
+    agent, _ = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
 
     return env, agent, config, save_partitions
 
