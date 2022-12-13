@@ -1,5 +1,5 @@
 overall:
-  agent_name: "random"
+  agent_name: "ddpg"
   env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:
