@@ -57,17 +57,6 @@ def save_file(directory, file_name, contents):
         f.write(contents)
 
 
-# -------------------------------- JUPYTER --------------------------------
-
-def is_using_jupyter():
-    return using_jupyter
-
-
-def set_using_jupyter(value: bool):
-    global using_jupyter
-    using_jupyter = value
-
-
 def set_agent_name(agent_name):
     global AGENT_NAME
     AGENT_NAME = agent_name
