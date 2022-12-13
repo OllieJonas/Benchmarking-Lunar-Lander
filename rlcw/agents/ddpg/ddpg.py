@@ -12,12 +12,10 @@ from agents.ddpg.networks import ActorNetwork, CriticNetwork
 
 
 class DdpgAgent(CheckpointAgent):
-    def __init__(self, logger, action_space, state_space, config):
-        super().__init__(logger, action_space, config)
-        self.action_space = action_space
-        self.state_space = state_space
-        self.input_dims = state_space.shape
-        self.no_actions = action_space.shape[0]
+    def __init__(self, logger, config):
+        super().__init__(logger, config)
+
+        self.requires_continuous_action_space = True
 
         # config vars
         self.alpha = config['alpha']
@@ -27,6 +25,19 @@ class DdpgAgent(CheckpointAgent):
         self.batch_size = config['batch_size']
         self.layer1_size = config['layer1_size']
         self.layer2_size = config['layer2_size']
+
+        self.no_actions = None
+        self.input_dims = None
+        self.noise = None
+
+        self.actor, self.actor_optim = None, None
+        self.critic, self.critic_optim = None, None
+        self.target_actor = None
+        self.target_critic = None
+
+    def assign_env_dependent_variables(self, action_space, state_space):
+        self.input_dims = state_space.shape
+        self.no_actions = action_space.shape[0]
 
         self.actor, self.actor_optim = agent_utils.with_optim(ActorNetwork(self.input_dims, self.layer1_size,
                                                                            self.layer2_size, no_actions=self.no_actions,

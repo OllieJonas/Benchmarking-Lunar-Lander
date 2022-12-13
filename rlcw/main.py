@@ -59,7 +59,7 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, state_space, agents_config):
+def get_agent(name: str, agents_config):
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -70,17 +70,17 @@ def get_agent(name: str, action_space, state_space, agents_config):
     name = name.lower()
 
     if name == "random":
-        return RandomAgent(_logger, action_space, cfg), cfg
+        return RandomAgent(_logger, cfg)
     elif name == "sarsa":
-        return SarsaAgent(_logger, action_space, state_space, cfg), cfg
+        return SarsaAgent(_logger, cfg)
     elif name == "ddpg":
-        return DdpgAgent(_logger, action_space, state_space, cfg), cfg
+        return DdpgAgent(_logger, cfg)
     elif name == "td3":
-        return Td3Agent(_logger, action_space, state_space, cfg), cfg
+        return Td3Agent(_logger, cfg)
     elif name == "sac":
-        return SoftActorCritic(_logger, action_space, state_space, cfg), cfg
+        return SoftActorCritic(_logger, cfg)
     elif name == "dqn":
-        return DQN(_logger, action_space, state_space, cfg), cfg
+        return DQN(_logger, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -129,8 +129,12 @@ def setup():
     save_partitions = _parse_episode_config_var(
         max_episodes, config_output["save"]["episodes"])
 
-    env = _make_env(env_name, should_record, save_partitions)
-    agent, _ = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
+    agent = get_agent(agent_name, config["agents"])
+
+    env = _make_env(env_name, should_record, agent.requires_continuous_action_space, save_partitions)
+
+    agent.update_action_and_state_spaces(env.action_space, env.observation_space)
+    agent.assign_env_dependent_variables(env.action_space, env.observation_space)
 
     return env, agent, config, save_partitions
 

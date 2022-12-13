@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch import optim
 
-import util
+import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
@@ -50,18 +50,10 @@ class SarsaAgent(CheckpointAgent):
     def name(self):
         return "sarsa"
 
-    def __init__(self, logger, action_space, state_space, config):
-        super().__init__(logger, action_space, config)
-
-        self.network = ActionValueNetwork(state_space, action_space).to(self.device)
-
-        self.optimizer = optim.Adam(self.network.parameters(), lr=0.001,
-                                    betas=(0.001, 0.00199),
-                                    eps=1e-8)
+    def __init__(self, logger, config):
+        super().__init__(logger, config)
 
         self.criterion = nn.MSELoss()
-
-        self.num_actions = action_space.n
 
         self.num_replay = 8
 
@@ -71,7 +63,22 @@ class SarsaAgent(CheckpointAgent):
         self.sample_size = config["sample_size"]
         self.batch_size = config["batch_size"]
 
+        self.lr = 0.001
+
         self.loss = 0
+
+        self.num_actions = None
+        self.optimizer = None
+        self.network = None
+
+    def assign_env_dependent_variables(self, action_space, state_space):
+        self.num_actions = action_space.n
+
+        self.network = ActionValueNetwork(state_space, action_space).to(self.device)
+
+        self.optimizer = optim.Adam(self.network.parameters(), lr=0.001,
+                                    betas=(0.001, 0.00199),
+                                    eps=1e-8)
 
     def save(self):
         self.save_checkpoint(self.network, "ActionValue")
@@ -83,7 +90,7 @@ class SarsaAgent(CheckpointAgent):
         _state = torch.Tensor(state).to(self.device)
 
         action_values = self.network.forward(_state)
-        probs_batch = self.softmax(action_values, self.device, self.tau).cpu().detach().numpy()
+        probs_batch = self.softmax(action_values, self.tau).cpu().detach().numpy()
 
         action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
 
@@ -107,7 +114,7 @@ class SarsaAgent(CheckpointAgent):
                                                self.criterion)
 
     @staticmethod
-    def softmax(action_values, device, tau=1.0):
+    def softmax(action_values, tau=1.0):
         """
         Args:
             action_values (Tensor array): A 2D array of shape (batch_size, num_actions).
@@ -152,7 +159,7 @@ class SarsaAgent(CheckpointAgent):
         _next_states = torch.Tensor(next_states).to(self.device)
         q_next_mat = current_q.forward(_next_states).detach()
 
-        probs_mat = self.softmax(q_next_mat, self.device, tau)
+        probs_mat = self.softmax(q_next_mat, tau)
         v_next_vec = torch.zeros((q_next_mat.shape[0]), dtype=torch.float64).detach()
 
         if terminals.any() == 1:

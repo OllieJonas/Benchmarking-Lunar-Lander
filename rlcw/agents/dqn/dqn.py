@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
+import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
 from agents.dqn.policy import EpsilonGreedyPolicy
 from replay_buffer import ReplayBuffer
@@ -31,8 +32,8 @@ class DeepQNetwork(nn.Module):
 
 class DQN(CheckpointAgent):
 
-    def __init__(self, logger, action_space, state_space, config):
-        super().__init__(logger, action_space, config)
+    def __init__(self, logger, config):
+        super().__init__(logger, config)
 
         # config vars
 
@@ -48,24 +49,30 @@ class DQN(CheckpointAgent):
 
         self.logger.info(f"DQN Config: {config}")
 
-        self.no_actions = action_space.n
-
-        self.q_network = DeepQNetwork(*state_space.shape, self.no_actions,
-                                      hidden_1_dims=self.hidden_size, hidden_2_dims=self.hidden_size)\
-            .to(self.device)
-
-        self.target_q_network = DeepQNetwork(*state_space.shape, self.no_actions,
-                                             hidden_1_dims=self.hidden_size, hidden_2_dims=self.hidden_size)\
-            .to(self.device)
-
-        self._sync_target_network()
-
-        self.value_network_optimiser = optim.Adam(self.q_network.parameters(), lr=self.learning_rate)
-
         self.criterion = nn.HuberLoss()
 
         self._batch_cnt = 0
         self._update_cnt = 0
+
+        self.policy = None
+        self.q_network, self.q_network_optim = None, None
+        self.target_q_network = None
+        self.no_actions = None
+
+    def assign_env_dependent_variables(self, action_space, state_space):
+        self.no_actions = action_space.n
+
+        self.q_network, self.q_network_optim = agent_utils.with_optim(
+            DeepQNetwork(*state_space.shape, self.no_actions,
+                         hidden_1_dims=self.hidden_size,
+                         hidden_2_dims=self.hidden_size),
+            self.learning_rate, device=self.device)
+
+        self.target_q_network = DeepQNetwork(*state_space.shape, self.no_actions,
+                                             hidden_1_dims=self.hidden_size, hidden_2_dims=self.hidden_size) \
+            .to(self.device)
+
+        self._sync_target_network()
 
         self.policy = EpsilonGreedyPolicy(self.epsilon, self.no_actions, self.device)
 
@@ -102,7 +109,7 @@ class DQN(CheckpointAgent):
         states, actions, rewards, next_states, dones = \
             training_context.random_sample(self.batch_size)
 
-        self.value_network_optimiser.zero_grad()
+        self.q_network_optim.zero_grad()
 
         if self._update_cnt % self.update_count == 0:
             self._sync_target_network()
@@ -124,7 +131,7 @@ class DQN(CheckpointAgent):
 
         loss = self.criterion(q_target, q_curr).to(self.device)
         loss.backward()
-        self.value_network_optimiser.step()
+        self.q_network_optim.step()
         self._update_cnt += 1
 
         self._decay_epsilon()
