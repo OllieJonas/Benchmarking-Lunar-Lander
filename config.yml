@@ -1,5 +1,5 @@
 overall:
-  agent_name: "dqn"
+  agent_name: "random"
   env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:
@@ -16,7 +16,7 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: 5
+      episodes: -1
       csv: true
       charts: true
       raw: false

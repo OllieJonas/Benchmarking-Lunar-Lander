@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from scipy.interpolate import interp1d
+
 
 import util as util
 import logger
@@ -11,13 +12,9 @@ def _get_csv_file_path(name):
            f'{"" if name.endswith(".csv") else ".csv"}'
 
 
-def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=False):
-    file_name = f'{util.get_curr_session_output_path()}results/png/{name}{"" if name.endswith(".png") else ".png"}'
+def save_plot_as_image(name, title, data, x_label, y_label):
+    file_name = util.with_file_extension(f'{util.get_curr_session_output_path()}results/png/{name}', "png")
     plt.plot(data)
-
-    if incremental_ticker:
-        plt.ticklabel_format(style='plain', axis='x', useOffset=False)
-        plt.gca().xaxis.set_major_locator(ticker.MultipleLocator(1))
 
     plt.title(title)
     plt.xlabel(x_label)
@@ -25,6 +22,32 @@ def save_plot_as_image(name, title, data, x_label, y_label, incremental_ticker=F
 
     plt.savefig(file_name)
     plt.close()
+
+
+# def plot_graph(graph_num, data_points, data_style, filename, graph_title):
+#     fig, ax = plt.subplots()
+#     ep_counter = np.arange(1, 1001)
+#     for i in range(len(data_points)):
+#         # Plot original data points
+#         ax.set_xlabel("Episode")
+#         ax.set_ylabel("Average Reward")
+#         ax.set_title(graph_title)
+#         ax.plot(data_points[i], color=data_style[i][0], alpha=0.35)
+#
+#         # Curve of Best Fit code
+#         gap = 50
+#         cobf = np.average(np.array(data_points[i]).reshape(-1, gap), axis=1)
+#         cobf_eps = ep_counter[0::gap]
+#         x_new = np.linspace(cobf_eps.min(), cobf_eps.max(), 500)
+#         f = interp1d(cobf_eps, cobf, kind="quadratic")
+#         y_smooth = f(x_new)
+#         ax.plot(x_new, y_smooth, color=data_style[i][2], label=data_style[i][1])
+#         ax.legend(loc="lower right")
+#
+#     fn = str(graph_num) + filename
+#     plt.savefig(fn)
+#     plt.clf()
+#     return graph_num + 1
 
 
 class Evaluator:

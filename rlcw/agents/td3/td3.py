@@ -4,8 +4,8 @@ import torch.nn.functional as F
 
 import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
-from networks import ActorNetwork
-from networks import CriticNetwork
+from agents.td3.networks import ActorNetwork
+from agents.td3.networks import CriticNetwork
 
 
 class Td3Agent(CheckpointAgent):

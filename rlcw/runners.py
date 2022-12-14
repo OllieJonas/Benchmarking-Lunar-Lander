@@ -46,11 +46,6 @@ class Runner(object):
 
         curr_episode = 0
 
-        is_using_jupyter = util.is_using_jupyter()
-
-        # display
-        image = plt.imshow(self.env.render()) if is_using_jupyter else None
-
         for t in range(self.max_timesteps):
             if curr_episode > self.max_episodes:
                 break
@@ -60,12 +55,7 @@ class Runner(object):
 
             # render
             if self.should_render:
-                if is_using_jupyter:
-                    image.set_data(self.env.render())
-                    display.display(plt.gcf())
-                    display.clear_output(wait=True)
-                else:
-                    self.env.render()
+                self.env.render()
 
             training_context.add(
                 state,
@@ -98,14 +88,3 @@ class Runner(object):
                 self.agent.save()
 
         return results
-
-    def render(self):
-        if self.should_render:
-            is_using_jupyter = util.is_using_jupyter()
-
-            if is_using_jupyter:
-                image = plt.imshow(self.env.render())
-                display.display(plt.gcf())
-                display.clear_output(wait=True)
-            else:
-                self.env.render()
