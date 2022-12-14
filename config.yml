@@ -1,5 +1,5 @@
 overall:
-  agent_name: "ddpg"
+  agent_name: "duelingdqn"
   env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:
@@ -62,14 +62,24 @@ agents:
     no_hidden_neurons: 256
   dqn:
     invert_done: false
-    learning_rate: 0.001
+    learning_rate: 0.0003
     batch_size: 64
     hidden_layer_size: 128
     update_count: 500
     epsilon: 1.0
-    epsilon_decay: 0.00005
+    epsilon_decay: 0.0005
     epsilon_min: 0.01
     gamma: 0.999
+  duelingdqn:
+    invert_done: false
+    learning_rate: 0.0003
+    batch_size: 64
+    hidden_layer_size: 512
+    update_count: 100
+    epsilon: 1.0
+    epsilon_decay: 0.00005
+    epsilon_min: 0.01
+    gamma: 0.99
   sarsa:
     gamma: 0.99
     tau: 0.01

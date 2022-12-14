@@ -27,6 +27,7 @@ class AbstractAgent(ABC):
         self.action_space = action_space
         self.state_space = state_space
 
+    @abstractmethod
     def assign_env_dependent_variables(self, action_space, state_space):
         pass
 

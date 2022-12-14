@@ -3,7 +3,7 @@ import torch
 
 
 class ReplayBuffer(object):
-    def __init__(self, max_size, input_dims=None):
+    def __init__(self, max_size, input_dims=None, is_continuous=True):
         if input_dims is None:
             input_dims = [8]
 
@@ -13,8 +13,7 @@ class ReplayBuffer(object):
         # buff
         self.states = np.zeros((self.max_capacity, *self.input_dims))
         self.next_states = np.zeros((self.max_capacity, *self.input_dims))
-        # self.actions = np.zeros((self.max_capacity, 2))
-        self.actions = np.zeros(self.max_capacity)
+        self.actions = np.zeros((self.max_capacity, 2)) if is_continuous else np.zeros(self.max_capacity)
         self.rewards = np.zeros(self.max_capacity)
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 

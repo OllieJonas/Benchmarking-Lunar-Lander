@@ -38,7 +38,8 @@ class Runner(object):
 
     def run(self):
         state, info = self.env.reset()
-        training_context = ReplayBuffer(self.training_ctx_capacity)
+        training_context = ReplayBuffer(self.training_ctx_capacity,
+                                        is_continuous=self.agent.requires_continuous_action_space)
         results = Results(agent_name=self.agent.name(), date_time=util.CURR_DATE_TIME)
 
         curr_episode = 0
