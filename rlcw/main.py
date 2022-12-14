@@ -21,17 +21,13 @@ LOGGER: logging.Logger
 
 
 def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, render_mode="rgb_array") if util.is_using_jupyter() or should_record \
+    env = gym.make(env_name, render_mode="rgb_array") if should_record \
         else gym.make(env_name, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
                                        episode_trigger=lambda x: x in episodes_to_save)
     return env
-
-
-def enable_jupyter(value: bool = True):
-    util.set_using_jupyter(value)
 
 
 def main():
@@ -87,10 +83,6 @@ def get_agent(name: str, action_space, state_space, agents_config):
         return DQN(_logger, action_space, state_space, cfg), cfg
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
-
-
-def is_using_jupyter():
-    return util.is_using_jupyter()
 
 
 def setup():
