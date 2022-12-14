@@ -9,3 +9,4 @@ moviepy~=1.0.3
 tqdm~=4.64.1
 Pympler~=1.0.1
 pyprof2calltree~=1.4.5
+scipy~=1.9.3
