@@ -64,4 +64,4 @@ def set_agent_name(agent_name):
 
 # -------------------------------- MATHS --------------------------------
 MIN_INT = -2147483648  # just a small af number
-MAX_INT = 2147483647  # just a small af number
+MAX_INT = 2147483647  # just a large af number

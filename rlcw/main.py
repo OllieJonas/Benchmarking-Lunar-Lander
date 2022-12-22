@@ -179,8 +179,8 @@ def _parse_config(name="config.yml"):
 
 
 def _parse_episode_config_var(max_episodes, inp):
-    return _split_into_partitions(max_episodes, inp) if type(inp) is int \
-        else list(map(lambda e: min(max_episodes - 1, e), inp))
+    return list(map(lambda e: min(max_episodes - 1, e), inp)) if type(inp) is list else \
+        [-1] if inp < 0 else _split_into_partitions(max_episodes, inp)
 
 
 def _split_into_partitions(_max, partitions):
