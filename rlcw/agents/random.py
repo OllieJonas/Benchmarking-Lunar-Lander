@@ -7,8 +7,8 @@ from agents.abstract_agent import AbstractAgent
 
 class RandomAgent(AbstractAgent):
 
-    def __init__(self, logger, action_space, config):
-        super().__init__(logger, action_space, config)
+    def __init__(self, logger, config):
+        super().__init__(logger, config)
         self.logger.info(
             f'I\'ve read my config file and found the value "{config["foo"]}" for foo!')
         self.logger.info(f'Here\'s my entire config file: {config}')

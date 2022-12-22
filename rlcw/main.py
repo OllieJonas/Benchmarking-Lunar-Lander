@@ -11,6 +11,7 @@ import util
 
 from agents.ddpg.ddpg import DdpgAgent
 from agents.dqn.dqn import DQN
+from agents.dqn.dueling_dqn import DuelingDQN
 from agents.td3.td3 import Td3Agent
 from agents.random import RandomAgent
 from agents.sac import SoftActorCritic
@@ -20,9 +21,9 @@ from orchestrator import Orchestrator
 LOGGER: logging.Logger
 
 
-def _make_env(env_name, should_record, episodes_to_save):
-    env = gym.make(env_name, render_mode="rgb_array") if should_record \
-        else gym.make(env_name, render_mode="human")
+def _make_env(env_name, should_record, continuous, episodes_to_save):
+    env = gym.make(env_name, continuous=continuous, render_mode="rgb_array") if should_record \
+        else gym.make(env_name, continuous=continuous, render_mode="human")
 
     if should_record:
         env = gym.wrappers.RecordVideo(env, f'{util.get_curr_session_output_path()}results/recordings/',
@@ -59,7 +60,7 @@ def main():
     orchestrator.eval()
 
 
-def get_agent(name: str, action_space, state_space, agents_config):
+def get_agent(name: str, agents_config):
     """
     To add an agent, do the following template:
     elif name == "<your agents name">:
@@ -70,17 +71,19 @@ def get_agent(name: str, action_space, state_space, agents_config):
     name = name.lower()
 
     if name == "random":
-        return RandomAgent(_logger, action_space, cfg), cfg
+        return RandomAgent(_logger, cfg)
     elif name == "sarsa":
-        return SarsaAgent(_logger, action_space, state_space, cfg), cfg
+        return SarsaAgent(_logger, cfg)
     elif name == "ddpg":
-        return DdpgAgent(_logger, action_space, state_space, cfg), cfg
+        return DdpgAgent(_logger, cfg)
     elif name == "td3":
-        return Td3Agent(_logger, action_space, state_space, cfg), cfg
+        return Td3Agent(_logger, cfg)
     elif name == "sac":
-        return SoftActorCritic(_logger, action_space, state_space, cfg), cfg
+        return SoftActorCritic(_logger, cfg)
     elif name == "dqn":
-        return DQN(_logger, action_space, state_space, cfg), cfg
+        return DQN(_logger, cfg)
+    elif name == "duelingdqn":
+        return DuelingDQN(_logger, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 
@@ -128,9 +131,13 @@ def setup():
 
     save_partitions = _parse_episode_config_var(
         max_episodes, config_output["save"]["episodes"])
-    env = _make_env(env_name, should_record, save_partitions)
 
-    agent, _ = get_agent(agent_name, env.action_space, env.observation_space, config["agents"])
+    agent = get_agent(agent_name, config["agents"])
+
+    env = _make_env(env_name, should_record, agent.requires_continuous_action_space, save_partitions)
+
+    agent.update_action_and_state_spaces(env.action_space, env.observation_space)
+    agent.assign_env_dependent_variables(env.action_space, env.observation_space)
 
     return env, agent, config, save_partitions
 

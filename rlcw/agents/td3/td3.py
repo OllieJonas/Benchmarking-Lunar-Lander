@@ -10,9 +10,10 @@ from agents.td3.networks import CriticNetwork
 
 class Td3Agent(CheckpointAgent):
 
-    def __init__(self, logger, action_space, state_space, config):
-        super().__init__(logger, action_space, config)
-        self.action_space = action_space
+    def __init__(self, logger, config):
+        super().__init__(logger, config)
+
+        self.requires_continuous_action_space = True
 
         # config vars
         self.alpha = config['alpha']
@@ -25,13 +26,25 @@ class Td3Agent(CheckpointAgent):
         self.layer2_size = config['layer2_size']
         self.n_actions = config['n_actions']
         self.max_size = config['max_size']
+        self.noise = config["noise"]
 
         self.update_actor_interval = 2
         self.warmup = 1000
-        self.max_action = self.action_space.high
-        self.min_action = self.action_space.low
+
         self.learn_step_counter = 0
         self.time_step = 0
+
+        self.target_critic_two, self.target_critic_two_optim = None, None
+        self.target_critic_one, self.target_critic_one_optim = None, None
+        self.target_actor, self.target_actor_optim = None, None
+        self.critic_two, self.critic_two_optim = None, None
+        self.critic_one, self.critic_one_optim = None, None
+        self.actor_two, self.actor_two_optim = None, None
+        self.actor_one, self.actor_one_optim = None, None
+        self.min_action, self.max_action = None, None
+
+    def assign_env_dependent_variables(self, action_space, state_space):
+        self.min_action, self.max_action = action_space.low, action_space.high
 
         self.actor_one, self.actor_one_optim = agent_utils.with_optim(
             ActorNetwork(self.input_dims, self.layer1_size,
@@ -67,8 +80,6 @@ class Td3Agent(CheckpointAgent):
         self.target_critic_two, self.target_critic_two_optim = agent_utils.with_optim(
             CriticNetwork(self.input_dims, self.layer1_size,
                           self.layer2_size, no_actions=self.n_actions), self.beta)
-
-        self.noise = config["noise"]
 
         agent_utils.hard_copy(self.critic_one, self.target_critic_one)
         agent_utils.hard_copy(self.critic_two, self.target_critic_two)

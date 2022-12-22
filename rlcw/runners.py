@@ -1,6 +1,3 @@
-from IPython import display
-from matplotlib import pyplot as plt
-
 import logger
 import util
 from agents.abstract_agent import CheckpointAgent
@@ -41,7 +38,8 @@ class Runner(object):
 
     def run(self):
         state, info = self.env.reset()
-        training_context = ReplayBuffer(self.training_ctx_capacity)
+        training_context = ReplayBuffer(self.training_ctx_capacity,
+                                        is_continuous=self.agent.requires_continuous_action_space)
         results = Results(agent_name=self.agent.name(), date_time=util.CURR_DATE_TIME)
 
         curr_episode = 0
@@ -84,7 +82,8 @@ class Runner(object):
             if truncated:
                 state, info = self.env.reset()
 
-            if self.is_eligible_for_checkpoints and self.should_save_checkpoints and curr_episode % self.save_every == 0:
+            if self.is_eligible_for_checkpoints and self.should_save_checkpoints and \
+                    curr_episode % self.save_every == 0:
                 self.agent.save()
 
         return results
