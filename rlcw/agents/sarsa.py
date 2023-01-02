@@ -1,55 +1,130 @@
-"""
-author: Helen
-"""
-from copy import deepcopy
+import random
 
 import numpy as np
+
+from typing import NoReturn, List
+
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch import optim
-
-import agents.common.utils as agent_utils
+from copy import deepcopy
+import util
 from agents.abstract_agent import CheckpointAgent
-from replay_buffer import ReplayBuffer
-
 
 # neural network as q-table for lunar landing to too big
 class ActionValueNetwork(nn.Module):
-
-    def __init__(self, state_space, action_space, no_layers=1, initial_weight=3e-3):
+    def __init__(self, state_dim , action_dim):
         super(ActionValueNetwork, self).__init__()
-
-        if no_layers <= 0:
-            raise ValueError("can't be less than 0!")
-
-        self.no_states = state_space.shape[0]
-        self.no_hidden_neurons = 256
-        self.no_layers = no_layers
-        self.initial_weight = initial_weight
-
-        self.input_layer = nn.Linear(self.no_states, self.no_hidden_neurons)
-        self.hidden_layer = nn.Linear(self.no_hidden_neurons, self.no_hidden_neurons)
-        self.output_layer = nn.Linear(self.no_hidden_neurons, action_space.n)
-
-        self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
-        self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
-
-        self.float()
+        #import pdb; pdb.set_trace();
+        self.x_layer = nn.Linear(state_dim.shape[0], 150)
+        self.h_layer = nn.Linear(150, 120)
+        self.y_layer = nn.Linear(120, action_dim.n)
+        print(self.x_layer)
 
     def forward(self, state):
-        inp = nn.functional.relu(self.input_layer(state))
-        hidden = nn.functional.relu(self.hidden_layer(inp))
-        out = self.output_layer(hidden)
+        xh = F.relu(self.x_layer(state))
+        hh = F.relu(self.h_layer(xh))
+        state_action_values = self.y_layer(hh)
+        return state_action_values
 
-        return out
+class ReplayBuffer(object):
+    def __init__(self):
+        self.buffer = []
+        self.buffer_s = []
+        
+    def add_to_buffer(self, data):
+        #data must be of the form (state,next_state,action,reward,terminal)
+        self.buffer.append(data)
+        
+    def add_to_buffer_sarsa(self, data):
+        #data must be of the form (state,next_state,action,n_action,reward,terminal)
+        self.buffer_s.append(data)
 
+    def sample_minibatch(self,minibatch_length):
+        states = []
+        next_states = []
+        actions = []
+        rewards = []
+        terminals = []
+        for i in range(minibatch_length):
+            random_int = np.random.randint(0, len(self.buffer)-1) 
+            transition = self.buffer[random_int]
+            states.append(transition[0])
+            next_states.append(transition[1])
+            actions.append(transition[2])
+            rewards.append(transition[3])
+            terminals.append(transition[4])
+        return torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(rewards), torch.Tensor(terminals)
+
+    def sample_minibatch_sarsa(self,minibatch_length):
+        
+        states = []
+        next_states = []
+        actions = []
+        next_actions = []
+        rewards = []
+        terminals = []
+        for i in range(minibatch_length):
+            
+            random_int = np.random.randint(0, len(self.buffer_s)-1) 
+            transition = self.buffer_s[64]
+            '''
+            states = np.append(states, transition[0])
+            next_states = np.append(next_states, transition[1])
+            actions = np.append(actions, transition[2])
+            next_actions = np.append(next_actions, transition[3])
+            rewards = np.append(rewards, transition[4])
+            terminals = np.append(terminals, transition[5])
+            '''
+            states.append(transition[0])
+            next_states.append(transition[1])
+            actions.append(transition[2])
+            next_actions.append(transition[3])
+            rewards.append(transition[4])
+            terminals.append(transition[5])
+            
+        #states = np.squeeze(states)
+        #next_states = np.squeeze(next_states)
+        #print("hi")
+        #print(states)
+        '''
+        print("next states")
+        print(next_states)
+        #print(torch.Tensor(states))
+        print("action")
+        print(actions)
+        print("next_actions")
+        print(next_actions)
+        print("reward")
+        print(reward)
+        print("terminal")states, next_states, actions, next_actions, reward, terminals
+        print(terminal)'''
+        # this corrects the array randomly being considered an object
+        for i in range(0, len(states)):
+            if len(states[i]) == 2:
+                states[i] = states[i][0]
+        '''
+        try:
+            torch.Tensor(states)
+        except:
+            #print([states[0]])
+            #print([next_states[0]])
+            if len(states[0]) == 2:
+                states[0] = states[0][0]
+            #print(len(states[0]))
+            return torch.Tensor([states[0]]), torch.Tensor([next_states[0]]), torch.Tensor([actions[0]]), torch.Tensor([next_actions[0]]), torch.Tensor([rewards[0]]), torch.Tensor([terminals[0]])
+         '''   
+        
+        return torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)#torch.from_numpy(states), torch.from_numpy(next_states), torch.from_numpy(actions), torch.from_numpy(next_actions), torch.from_numpy(rewards), torch.from_numpy(terminals)# torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)
 
 # Technically Deep/expected SARSA but t'is late so just SARSA
+
 class SarsaAgent(CheckpointAgent):
 
     def name(self):
         return "sarsa"
-
+    
     def __init__(self, logger, config):
         super().__init__(logger, config)
 
@@ -62,146 +137,91 @@ class SarsaAgent(CheckpointAgent):
         self.tau = config["tau"]
         self.sample_size = config["sample_size"]
         self.batch_size = config["batch_size"]
+        self.epsilon = 0.99
 
         self.lr = 0.001
 
         self.loss = 0
 
+        self.replay_buffer = ReplayBuffer()
         self.num_actions = None
         self.optimizer = None
         self.network = None
+        self.discount_factor = 0.99
+        self.MSELoss_function = nn.MSELoss()
+        self.replay_buffer = ReplayBuffer()
 
     def assign_env_dependent_variables(self, action_space, state_space):
         self.num_actions = action_space.n
 
         self.network = ActionValueNetwork(state_space, action_space).to(self.device)
 
-        self.optimizer = optim.Adam(self.network.parameters(), lr=0.001,
-                                    betas=(0.001, 0.00199),
-                                    eps=1e-8)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=0.001)
 
+    def decay_epsilon(self):
+        if self.epsilon > 0.2:
+            self.epsilon *= 0.996 #change this so eplison does not decay as fast
+    
+        if self.epsilon <= 0.2:
+            self.epsilon = 0.2
+
+    def get_action(self, state):
+
+        if np.random.uniform(0, 1) < self.epsilon:
+                return self.action_space.sample()  # choose random action
+        else:
+                #import pdb; pdb.set_trace();
+                
+                state = torch.from_numpy(state).float()
+                network_output_to_numpy = self.network(state).data.numpy()
+                return np.argmax(network_output_to_numpy)  # choose greedy action
+    
+    def update_Sarsa_Network(self, state, next_state, action, next_action, reward, terminals):
+
+        qsa = torch.gather(self.network(state), dim=1, index=action.long())
+
+        qsa_next_action = torch.gather(self.network(next_state), dim=1, index=next_action.long())
+
+        not_terminals = 1 - terminals
+
+        qsa_next_target = reward + not_terminals * (self.discount_factor * qsa_next_action)
+
+        q_network_loss = self.MSELoss_function(qsa, qsa_next_target.detach())
+        self.optimizer.zero_grad()
+        q_network_loss.backward()
+        self.optimizer.step()
+            
     def save(self):
         self.save_checkpoint(self.network, "ActionValue")
 
     def load(self, path):
         self.load_checkpoint(self.network, path, "ActionValue")
-
-    def get_action(self, state):
-        _state = torch.Tensor(state).to(self.device)
-
-        action_values = self.network.forward(_state)
-        probs_batch = self.softmax(action_values, self.tau).cpu().detach().numpy()
-
-        action = np.random.choice(self.num_actions, p=probs_batch.squeeze())
-
-        return action
-
+    
     def train(self, training_context: ReplayBuffer):
+        
         if training_context.cnt < self.batch_size:
             return
         else:
-            self._do_train(training_context)
-
-    def _do_train(self, training_context: ReplayBuffer):
-
-        if training_context.cnt < self.batch_size:
-            return
-
-        current_q = deepcopy(self.network)
-        for _ in range(self.num_replay):
-            self.loss += self.optimize_network(training_context, self.gamma, self.optimizer, self.network, current_q,
-                                               self.tau,
-                                               self.criterion)
-
-    @staticmethod
-    def softmax(action_values, tau=1.0):
-        """
-        Args:
-            action_values (Tensor array): A 2D array of shape (batch_size, num_actions).
-                        The action-values computed by an action-value network.
-            device (PyTorch device): Device to run this on.
-            tau (float): The temperature parameter scalar.
-
-        Returns:
-            A 2D Tensor array of shape (batch_size, num_actions). Where each column is a probability distribution
-            over the actions representing the get_action.
-        """
-        preferences = action_values / tau
-        max_preference = torch.max(preferences)
-
-        reshaped_max_preference = max_preference.view((-1, 1))
-        exp_preferences = torch.exp(preferences - reshaped_max_preference)
-        sum_of_exp_preferences = torch.sum(exp_preferences, dim=1)
-
-        reshaped_sum_of_exp_preferences = sum_of_exp_preferences.view((-1, 1))
-
-        action_probs = exp_preferences / reshaped_sum_of_exp_preferences
-        action_probs = action_probs.squeeze()
-
-        return action_probs
-
-    def get_td(self, states, next_states, actions, rewards, discount, terminals, network, current_q, tau):
-        """
-        Args:
-            states (Numpy array): The batch of states with the shape (batch_size, state_dim).
-            next_states (Numpy array): The batch of next states with the shape (batch_size, state_dim).
-            actions (Numpy array): The batch of actions with the shape (batch_size,).
-            rewards (Numpy array): The batch of rewards with the shape (batch_size,).
-            discount (float): The discount factor (gamma).
-            terminals (Numpy array): The batch of terminals with the shape (batch_size,).
-            network (ActionValueNetwork): The latest state of the network that is getting replay updates.
-            current_q (ActionValueNetwork): The fixed network used for computing the targets,
-                                            and particularly, the action-values at the next-states.
-        Returns:
-            target_vec (Tensor array): The TD Target for actions taken, of shape (batch_size,)
-            estimate_vec (Tensor array): The TD estimate for actions taken, of shape (batch_size,)
-        """
-        _next_states = torch.Tensor(next_states).to(self.device)
-        q_next_mat = current_q.forward(_next_states).detach()
-
-        probs_mat = self.softmax(q_next_mat, tau)
-        v_next_vec = torch.zeros((q_next_mat.shape[0]), dtype=torch.float64).detach()
-
-        if terminals.any() == 1:
-            terminals = [1]
-        else:
-            terminals = [0]
-
-        v_next_vec = torch.sum(probs_mat * q_next_mat, dim=1) * (1 - torch.tensor(terminals).to(self.device))
-
-        target_vec = torch.tensor(rewards).to(self.device) + (discount * v_next_vec)
-
-        _states = torch.Tensor(states).to(self.device)
-
-        q_mat = network.forward(_states)
-
-        batch_indices = torch.arange(q_mat.shape[0])
-
-        estimate_vec = q_mat[batch_indices, np.expand_dims(np.max(actions, axis=1), axis=1)]
-
-        return target_vec, estimate_vec
-
-    def optimize_network(self, training_context, discount, optimizer, network, current_q, tau, criterion):
-        """
-        Args:
-            training_context (ReplayBuffer): The ReplayBuffer
-            discount (float): The discount factor.
-            network (ActionValueNetwork): The latest state of the network that is getting replay updates.
-            current_q (ActionValueNetwork): The fixed network used for computing the targets,
-                                            and particularly, the action-values at the next-states.
-        Return:
-            Loss (float): The loss value for the current batch.
-        """
-
-        states, actions, rewards, next_states, terminals = training_context.random_sample(
+            for i in range(self.batch_size):
+                states, actions, rewards, next_states, terminals = training_context.random_sample(
             self.sample_size)
+                #states, next_states, actions, next_actions, rewards, terminals = self.replay_buffer.sample_minibatch_sarsa(64)
+                new_actions = []
+                next_actions = []
+                for i in range(0, len(states)):
+                    if len(states[i]) == 2:
+                        states[i] = states[i][0]
+                    new_actions.append([actions[i]])
+                    next_actions.append([self.get_action(next_states[i])])
 
-        batch_size = states.shape[0]
+                states = torch.Tensor(states)
+                next_states = torch.Tensor(next_states)
+                actions = torch.Tensor(new_actions)
+                next_actions = torch.Tensor(next_actions)
+                rewards = torch.Tensor(rewards)
+                terminals = torch.Tensor(terminals)
+                self.update_Sarsa_Network(states, next_states, actions, next_actions, rewards, terminals)
 
-        td_target, td_estimate = self.get_td(states, next_states, actions, rewards, discount, terminals, network,
-                                             current_q, tau)
-
-        loss = criterion(td_estimate.double().to(self.device), td_target.to(self.device))
-        loss.backward()
-
-        return (loss / batch_size).cpu().detach().numpy()
+    def best_move(self, state):
+        
+        return np.argmax(self.network(state).data.numpy())

@@ -71,13 +71,16 @@ class Runner(object):
             _summary = results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
 
             if _summary is not None:
-                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {_summary}")
+                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {_summary} epsilon {self.agent.epsilon}")
 
             # self.LOGGER.debug(timestep_result)
 
             if terminated:
                 curr_episode += 1
                 state, info = self.env.reset()
+
+                # decays epsilon 
+                self.agent.decay_epsilon()
 
             if truncated:
                 state, info = self.env.reset()
