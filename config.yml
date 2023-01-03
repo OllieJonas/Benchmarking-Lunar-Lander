@@ -1,11 +1,11 @@
 overall:
-  agent_name: "random"
+  agent_name: "ddpg"
   env_name: "LunarLander-v2"
   context_capacity: 100000
   checkpoint:
     save:
       enabled: true
-      every: 100
+      every: 5
     load:
       enabled: false
       use_latest_run: false
@@ -16,13 +16,13 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: -1
+      episodes: 5
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 1000
+    max: 10
   timesteps:
     max: 1000000000000000
     start_training: 50
@@ -41,7 +41,7 @@ agents:
     alpha: 0.001
     beta: 0.001
     gamma: 0.99
-    input_dims: [ 8 ]
+    input_dims: [8]
     tau: 0.005
     noise: 0.1
     batch_size: 64
