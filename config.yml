@@ -1,7 +1,7 @@
 overall:
-  agent_name: "random"
+  agent_name: "sarsa"
   env_name: "LunarLander-v2"
-  context_capacity: 100000
+  context_capacity: 1000000 # sarsa has context of 90351
   checkpoint:
     save:
       enabled: true
@@ -16,7 +16,7 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: -1
+      episodes: 10
       csv: true
       charts: true
       raw: false
