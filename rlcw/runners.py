@@ -60,8 +60,8 @@ class Runner(object):
 
             training_context.add_to_buffer_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
 
-            #if t > self.start_training_timesteps:
-            #    self.agent.train(training_context)
+            if t > self.start_training_timesteps:
+                self.agent.train(training_context)
 
             timestep_result = Results.Timestep(state=state, action=action, reward=reward)
             _summary = results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
@@ -79,8 +79,8 @@ class Runner(object):
                 #import pdb; pdb.set_trace();
                 #training_context.add_to_buffer_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
                 state, info = self.env.reset()
-                #action = self.agent.get_action(state)
-                #next_state, reward, terminated, truncated, info = self.env.step(action)
+                action = self.agent.get_action(state)
+                next_state, reward, terminated, truncated, info = self.env.step(action)
 
                 ep_timestep = 0
 
@@ -95,10 +95,15 @@ class Runner(object):
 
                 # decays epsilon 
                 print("length of context: ", training_context.cnt)
-                self.agent.train(training_context)
+                #self.agent.train(training_context)
                 self.agent.decay_epsilon()
                 ep_timestep = 0
-
+            else:
+                state = next_state
+                next_state = nn_state
+                action = next_action
+                reward = reward_1
+                ep_timestep +=1
 
             if truncated:
                 state, info = self.env.reset()
@@ -107,11 +112,7 @@ class Runner(object):
                     curr_episode % self.save_every == 0:
                 self.agent.save()
 
-            state = next_state
-            next_state = nn_state
-            action = next_action
-            reward = reward_1
-            ep_timestep +=1
+
             
 
             

@@ -84,4 +84,4 @@ agents:
     gamma: 0.99
     tau: 0.01
     sample_size: 64
-    batch_size: 128
+    batch_size: 2
