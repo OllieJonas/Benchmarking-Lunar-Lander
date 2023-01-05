@@ -2,7 +2,7 @@
 
 Submission for CM30225 (Reinforcement Learning) at the University of Bath, written by [Fraser Dwyer](https://github.com/Fraser-Dwyer), [Helen Harmer](https://github.com/helen2000), [Ollie Jonas](https://github.com/OllieJonas), and [Yatin Tanna](https://github.com/YatinTanna).
 
-A description of the project (including the config file, creating an agent and the project's structure) can be found in the docs/ directory.
+A description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
 
 ## Installation Guide
 
