@@ -1,4 +1,4 @@
-# Benchmarking Different RL Methods on Lunar Lander (2022)
+# Benchmarking Different RL Methods on Lunar Lander
 
 <p align="center">
   <img src="https://imgur.com/ODEnfxR.gif" width="50%" />
