@@ -18,7 +18,6 @@ will be creating upon running the program):
                     - recordings
         - rlcw
             - agents
-            - notebooks
             - tests
         - scripts
 
@@ -66,17 +65,13 @@ This is our source code. Please write code in here :) I'll write a brief descrip
 
 ##### agents
 
-Contains the abstract template of an agent, as well as any implementations. Please put your agents in here!
-
-##### notebooks
-
-Simply for Docker and Jupyter as an experiment for rendering using Docker - don't worry about it too much.
+Contains the abstract template of an agent, as well as any implementations of agents.
 
 ##### tests
 
 Any unit tests we want to write should go in here.
 
-##### scripts
+### scripts
 
 This just contains the entrypoint for the Docker image - please don't touch anything in there unless you know what
 you're doing!
