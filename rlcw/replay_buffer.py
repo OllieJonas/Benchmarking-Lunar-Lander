@@ -30,11 +30,8 @@ class ReplayBuffer(object):
         
         states, next_states, actions, next_actions, rewards, terminals = [], [], [], [], [], []
         batch = np.random.choice(len(self.sarsa_buffer), sample_size)
-        for i in batch:
-            
-            random_int = np.random.randint(0, len(self.sarsa_buffer)-1) 
-        
-            entry = self.sarsa_buffer[random_int]
+        for i in batch:     
+            entry = self.sarsa_buffer[i]
             states.append(entry[0])
             next_states.append(entry[1])
             actions.append(entry[2])
