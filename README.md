@@ -1,5 +1,6 @@
-# Benchmarking Atari Agents on Lunar Lander (2022)
+# Benchmarking Different RL Methods on Lunar Lander (2022)
 
+Submission for CM30225 (Reinforcement Learning) at the University of Bath, written by [Fraser Dwyer](https://github.com/Fraser-Dwyer), [Helen Harmer](https://github.com/helen2000), [Ollie Jonas](https://github.com/OllieJonas), and [Yatin Tanna](https://github.com/YatinTanna).
 
 ## Installation Guide
 
