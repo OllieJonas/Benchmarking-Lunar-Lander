@@ -36,6 +36,8 @@ class StateActionNetwork(nn.Module):
 
 '''
     Sarsa agent to solve Lunar lander
+
+    Cite: https://github.com/JohDonald/Deep-Q-Learning-Deep-SARSA-LunarLander-v2
 '''
 class SarsaAgent(CheckpointAgent):
 

@@ -82,6 +82,6 @@ agents:
     gamma: 0.99
   sarsa:
     gamma: 0.99
-    tau: 0.01
-    sample_size: 64
-    batch_size: 2
+    learning_rate: 0.001
+    epsilon: 1.0
+    batch_size: 64
