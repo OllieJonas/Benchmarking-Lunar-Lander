@@ -45,7 +45,7 @@ class Runner(object):
         action = self.agent.get_action(state)
         next_state, reward, terminated, truncated, info = self.env.step(action)
         curr_episode = 0
-
+        ep_timestep = 0
         for t in range(self.max_timesteps):
             if curr_episode > self.max_episodes:
                 break
@@ -58,13 +58,7 @@ class Runner(object):
             if self.should_render:
                 self.env.render()
 
-            training_context.add_sarsa(
-                state,
-                next_state,
-                action,
-                next_action,
-                reward,
-                int(terminated), invert_done=self.should_invert_done)
+            training_context.add_to_buffer_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
 
             #if t > self.start_training_timesteps:
             #    self.agent.train(training_context)
@@ -78,23 +72,33 @@ class Runner(object):
             # self.LOGGER.debug(timestep_result)
             terminated = terminal_1
 
+            if ep_timestep >500:
+                curr_episode += 1
+                #next_action = self.agent.get_action(next_state)
+                
+                #import pdb; pdb.set_trace();
+                #training_context.add_to_buffer_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
+                state, info = self.env.reset()
+                #action = self.agent.get_action(state)
+                #next_state, reward, terminated, truncated, info = self.env.step(action)
+
+                ep_timestep = 0
+
             if terminated:
                 curr_episode += 1
                 next_action = self.agent.get_action(next_state)
-                training_context.add_sarsa(
-                    state,
-                    next_state,
-                    action,
-                    next_action,
-                    reward,
-                    int(terminated), invert_done=self.should_invert_done)
+                training_context.add_to_buffer_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
 
                 state, info = self.env.reset()
+                action = self.agent.get_action(state)
+                next_state, reward, terminated, truncated, info = self.env.step(action)
 
                 # decays epsilon 
                 print("length of context: ", training_context.cnt)
                 self.agent.train(training_context)
                 self.agent.decay_epsilon()
+                ep_timestep = 0
+
 
             if truncated:
                 state, info = self.env.reset()
@@ -102,10 +106,14 @@ class Runner(object):
             if self.is_eligible_for_checkpoints and self.should_save_checkpoints and \
                     curr_episode % self.save_every == 0:
                 self.agent.save()
-            
+
             state = next_state
             next_state = nn_state
             action = next_action
             reward = reward_1
+            ep_timestep +=1
+            
+
+            
 
         return results

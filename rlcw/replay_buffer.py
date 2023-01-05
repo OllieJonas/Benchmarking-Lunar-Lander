@@ -19,6 +19,75 @@ class ReplayBuffer(object):
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 
         self.cnt = 0
+        self.buffer_s = []
+        
+
+    def add_to_buffer_sarsa(self, data):
+        #data must be of the form (state,next_state,action,n_action,reward,terminal)
+        self.buffer_s.append(data)
+
+
+    def sample_minibatch_sarsa(self,minibatch_length):
+        
+        states = []
+        next_states = []
+        actions = []
+        next_actions = []
+        rewards = []
+        terminals = []
+        for i in range(minibatch_length):
+            
+            random_int = np.random.randint(0, len(self.buffer_s)-1) 
+        
+            transition = self.buffer_s[random_int]
+            '''
+            states = np.append(states, transition[0])
+            next_states = np.append(next_states, transition[1])
+            actions = np.append(actions, transition[2])
+            next_actions = np.append(next_actions, transition[3])
+            rewards = np.append(rewards, transition[4])
+            terminals = np.append(terminals, transition[5])
+            '''
+            states.append(transition[0])
+            next_states.append(transition[1])
+            actions.append(transition[2])
+            next_actions.append(transition[3])
+            rewards.append(transition[4])
+            terminals.append(transition[5])
+            
+        #states = np.squeeze(states)
+        #next_states = np.squeeze(next_states)
+        #print("hi")
+        #print(states)
+        '''
+        print("next states")
+        print(next_states)
+        #print(torch.Tensor(states))
+        print("action")
+        print(actions)
+        print("next_actions")
+        print(next_actions)
+        print("reward")
+        print(reward)
+        print("terminal")states, next_states, actions, next_actions, reward, terminals
+        print(terminal)'''
+        # this corrects the array randomly being considered an object
+        for i in range(0, len(states)):
+            if len(states[i]) == 2:
+                states[i] = states[i][0]
+        '''
+        try:
+            torch.Tensor(states)
+        except:
+            #print([states[0]])
+            #print([next_states[0]])
+            if len(states[0]) == 2:
+                states[0] = states[0][0]
+            #print(len(states[0]))
+            return torch.Tensor([states[0]]), torch.Tensor([next_states[0]]), torch.Tensor([actions[0]]), torch.Tensor([next_actions[0]]), torch.Tensor([rewards[0]]), torch.Tensor([terminals[0]])
+         '''   
+        
+        return torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)#torch.from_numpy(states), torch.from_numpy(next_states), torch.from_numpy(actions), torch.from_numpy(next_actions), torch.from_numpy(rewards), torch.from_numpy(terminals)# torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)
 
     def add(self, state, next_state, action, reward, done, invert_done=True):
         index = self.cnt % self.max_capacity

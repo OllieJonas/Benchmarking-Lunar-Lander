@@ -112,7 +112,7 @@ class SarsaAgent(CheckpointAgent):
     
     def train(self, training_context: ReplayBuffer):
         for i in range(self.batch_size):
-            states, next_states, actions, next_actions, rewards, terminals = training_context.random_sample_sarsa(64)
+            states, next_states, actions, next_actions, rewards, terminals = training_context.sample_minibatch_sarsa(64)
             states = torch.Tensor(states)
             next_states = torch.Tensor(next_states)
             actions = torch.Tensor(actions)
