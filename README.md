@@ -32,5 +32,5 @@ For Windows, you can run this program using Docker.
 
 For UNIX-based systems, you just need to run the program like any old python program: `python3 -m main`. 
   
-For Windows, a `run.bat` file has been included for convenience sake in the root directory. This builds and runs the image, and then collects any results from the container. Occasionally, you may need to prune any hanging images. To do this, use the following: docker prune images --force. 
+For Windows, a `run.bat` file has been included for convenience sake in the root directory. This builds and runs the image, and then collects any results from the container. 
   
