@@ -5,7 +5,7 @@ overall:
   checkpoint:
     save:
       enabled: true
-      every: 40
+      every: 20
     load:
       enabled: false
       use_latest_run: false
@@ -16,7 +16,7 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: 40
+      episodes: 20
       csv: true
       charts: true
       raw: false
@@ -24,7 +24,7 @@ overall:
   episodes:
     max: 1000
   timesteps:
-    episode_timesteps: 800
+    episode_timesteps: 500
     max: 1000000000000000
     start_training: 50
 agents:
@@ -45,7 +45,7 @@ agents:
     input_dims: [8]
     tau: 0.005
     noise: 0.1
-    batch_size: 100
+    batch_size: 64
     layer1_size: 400
     layer2_size: 300
     n_actions: 2

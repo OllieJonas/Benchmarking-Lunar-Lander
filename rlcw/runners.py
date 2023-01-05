@@ -83,13 +83,12 @@ class Runner(object):
 
             # self.LOGGER.debug(timestep_result)
 
-            if terminated or (ep_t > self.max_ep_timestep):
+            if terminated or (ep_t > self.max_ep_timestep and self.max_ep_timestep != -1):
                 ep_t = 0
                 curr_episode += 1
                 state, info = self.env.reset()
 
             if truncated:
-                ep_t = 0
                 state, info = self.env.reset()
 
             if self.is_eligible_for_checkpoints and self.should_save_checkpoints and \
