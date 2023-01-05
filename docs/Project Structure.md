@@ -71,7 +71,7 @@ Contains the abstract template of an agent, as well as any implementations of ag
 
 Any unit tests we want to write should go in here.
 
-### scripts
+### Scripts
 
 This just contains the entrypoint for the Docker image - please don't touch anything in there unless you know what
 you're doing!
