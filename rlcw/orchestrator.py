@@ -42,6 +42,7 @@ class Orchestrator:
         self.max_episodes = config["overall"]["episodes"]["max"]
 
         self.max_timesteps = config["overall"]["timesteps"]["max"]
+        self.max_ep_timestep = config["overall"]["timesteps"]["episode_timesteps"]
         self.start_training_timesteps = config["overall"]["timesteps"]["start_training"]
         self.training_ctx_capacity = config["overall"]["context_capacity"]
 
@@ -75,6 +76,7 @@ class Orchestrator:
                         episodes_to_save=self.episodes_to_save,
                         should_render=self.should_render,
                         max_timesteps=self.max_timesteps,
+                        max_ep_timestep=self.max_ep_timestep,
                         max_episodes=self.max_episodes,
                         start_training_timesteps=self.start_training_timesteps,
                         training_ctx_capacity=self.training_ctx_capacity,
@@ -116,7 +118,8 @@ class Loader:
     def load(self, agent):
         if self.is_enabled:
             if not isinstance(agent, CheckpointAgent):
-                self.LOGGER.warning("Can't load checkpoints for this agent! Disabling...")
+                self.LOGGER.warning(
+                    "Can't load checkpoints for this agent! Disabling...")
             else:
                 path = self._get_path()
                 self.LOGGER.info(f"Loading enabled! Loading from {path}...")
@@ -126,7 +129,8 @@ class Loader:
         latest_policies = self._get_latest_policies_for(self.agent_name)
 
         if latest_policies is None and self.use_latest:
-            self.LOGGER.critical(f"Can't find a run for agent with name {self.agent_name}! Shutting down ...")
+            self.LOGGER.critical(
+                f"Can't find a run for agent with name {self.agent_name}! Shutting down ...")
             exit(1)
 
         return latest_policies if self.use_latest \
