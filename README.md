@@ -6,7 +6,30 @@
 
 Submission for CM30225 (Reinforcement Learning) at the University of Bath, written by [Fraser Dwyer](https://github.com/Fraser-Dwyer), [Helen Harmer](https://github.com/helen2000), [Ollie Jonas](https://github.com/OllieJonas), and [Yatin Tanna](https://github.com/YatinTanna).
 
-A description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
+This project aims to provide a framework for multiple different RL methods, and provide some utilities that are common amongst all of them.
+
+A more description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
+
+## Main Features
+
+Brief outline of the features provided:
+
+- Automatically provides runner code with a replay buffer (with conversion to PyTorch tensors)
+- Output (raw data & charts and logs) of overall summary of project (cumulative reward, average reward, no timesteps) per episode
+- Output (raw data & charts) of individual rewards for each timestep at specified episodes
+- Output recordings of specified episodes
+- Saving of checkpoints for neural networks at specified intervals
+- Loading of neural network parameters at startup (either from absolute path, relative path or from latest run)
+- Swaps between continuous and discrete action spaces of LunarLander at runtime
+- Provides easy-to-read configuration file, which dynamically loads a section for each agent, to allow specifying of different hyper-parameters
+
+## Limitations
+
+A brief outline of either things this program can't do / things you really have to fight the program to achieve (that we wish it could do)
+
+- Log stdout / stderr to an output file (it only logs what we log, **not** what gym logs)
+- Multiple runner implementations (we use a different one for SARSA, but it's very ugly code)
+- Save episodes based on some criteria that's found in run-time (for example: DQN had some runs which took tens of thousands of time-steps to complete, but we have no way of specifying to save recordings of those episodes - you **have** to specify which episodes to save at compile-time)
 
 ## Installation Guide
 
