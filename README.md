@@ -8,7 +8,7 @@ Submission for CM30225 (Reinforcement Learning) at the University of Bath, writt
 
 This project aims to provide a framework for multiple different RL methods, and provide some utilities that are common amongst all of them.
 
-A more description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
+A more detailed description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
 
 ## Features
 
