@@ -64,7 +64,13 @@ class Runner(object):
             if self.should_render:
                 self.env.render()
 
-            training_context.add_to_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
+            training_context.add_to_sarsa(
+                state,
+                next_state,
+                action,
+                next_action,
+                reward,
+                int(terminated))
 
             if t > self.start_training_timesteps:
                 self.agent.train(training_context)
@@ -84,7 +90,13 @@ class Runner(object):
             if terminated:
                 curr_episode += 1
                 next_action = self.agent.get_action(next_state)
-                training_context.add_to_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
+                training_context.add_to_sarsa(
+                    state,
+                    next_state,
+                    action,
+                    next_action,
+                    reward,
+                    int(terminated))
 
                 state, info = self.env.reset()
                 action = self.agent.get_action(state)
