@@ -10,7 +10,7 @@ This project aims to provide a framework for multiple different RL methods, and 
 
 A more description of the project (including the config file, creating an agent and the project's structure) can be found in the `docs/` directory.
 
-## Main Features
+## Features
 
 Brief outline of the features provided:
 
