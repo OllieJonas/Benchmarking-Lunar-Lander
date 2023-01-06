@@ -84,7 +84,7 @@ class Orchestrator:
                         verbose=self.verbose)
 
         self.LOGGER.info(f'Running agent {self.agent.name()} ...')
-        self.results = runner.run()
+        self.results = runner.run_agent()
         # self.time_taken = end - start
         # self.LOGGER.info(f'Time Taken: {self.time_taken}')
         self.env.close()

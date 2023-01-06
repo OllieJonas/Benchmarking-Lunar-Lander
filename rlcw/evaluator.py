@@ -40,6 +40,7 @@ class Evaluator:
         return self.results
 
     def _eval_non_detailed(self):
+        
         cumulative_rewards = [x[0] for x in self.results.results]
         average_rewards = [x[1] for x in self.results.results]
         no_timesteps = [x[2] for x in self.results.results]
@@ -50,11 +51,11 @@ class Evaluator:
 
         if self.should_save_charts:
             save_plot_as_image(f"cumulative_rewards.png", "Cumulative Reward over each Episode",
-                               [cumulative_rewards], "Episode", "Reward")
+                               cumulative_rewards, "Episode", "Reward")
             save_plot_as_image(f"average_rewards.png", "Average Reward over each Episode",
-                               [average_rewards], "Episode", "Reward")
+                               average_rewards, "Episode", "Reward")
             save_plot_as_image(f"no_timesteps.png", "Number of Timesteps",
-                               [no_timesteps], "Episode", "No Timesteps")
+                               no_timesteps, "Episode", "No Timesteps")
 
         if self.should_save_csv:
             name = "results.csv"
@@ -72,7 +73,7 @@ class Evaluator:
                                    [t.reward for t in v],
                                    "Timesteps",
                                    "Reward",
-                                   incremental_ticker=False)
+                )
 
             if self.should_save_csv:
                 name = f"results_ep_{str(k)}.csv"

@@ -3,7 +3,7 @@ import torch
 
 
 class ReplayBuffer(object):
-    def __init__(self, max_size, input_dims=None, is_continuous=True):
+    def __init__(self, max_size, input_dims=None, is_continuous=False):
         if input_dims is None:
             input_dims = [8]
 
@@ -14,10 +14,37 @@ class ReplayBuffer(object):
         self.states = np.zeros((self.max_capacity, *self.input_dims))
         self.next_states = np.zeros((self.max_capacity, *self.input_dims))
         self.actions = np.zeros((self.max_capacity, 2)) if is_continuous else np.zeros(self.max_capacity)
+        self.next_actions = np.zeros((self.max_capacity, 2)) if is_continuous else np.zeros(self.max_capacity)
         self.rewards = np.zeros(self.max_capacity)
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 
         self.cnt = 0
+        self.sarsa_buffer = []
+        
+
+    def add_to_sarsa(self, data):
+        self.sarsa_buffer.append(data)
+
+
+    def random_sample_sarsa(self, sample_size):
+        
+        states, next_states, actions, next_actions, rewards, terminals = [], [], [], [], [], []
+        batch = np.random.choice(len(self.sarsa_buffer), sample_size)
+        for i in batch:     
+            entry = self.sarsa_buffer[i]
+            states.append(entry[0])
+            next_states.append(entry[1])
+            actions.append(entry[2])
+            next_actions.append(entry[3])
+            rewards.append(entry[4])
+            terminals.append(entry[5])
+
+        # this corrects the array randomly being considered an object
+        for i in range(0, len(states)):
+            if len(states[i]) == 2:
+                states[i] = states[i][0]
+
+        return torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)
 
     def add(self, state, next_state, action, reward, done, invert_done=True):
         index = self.cnt % self.max_capacity
@@ -28,10 +55,11 @@ class ReplayBuffer(object):
 
         self.dones[index] = 1 - done if invert_done else done
         self.cnt += 1
+        
 
     def random_sample(self, sample_size):
         size = min(self.cnt, self.max_capacity)
-
+        
         batch = np.random.choice(size, sample_size)
 
         states = self.states[batch]
