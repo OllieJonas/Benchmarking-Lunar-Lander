@@ -1,7 +1,7 @@
 overall:
   agent_name: "td3"
   env_name: "LunarLander-v2"
-  context_capacity: 100000
+  context_capacity: 1000000 # sarsa has context of 90351
   checkpoint:
     save:
       enabled: true
@@ -83,6 +83,6 @@ agents:
     gamma: 0.99
   sarsa:
     gamma: 0.99
-    tau: 0.01
-    sample_size: 64
-    batch_size: 128
+    learning_rate: 0.001
+    epsilon: 1.0
+    batch_size: 64

@@ -37,6 +37,80 @@ class Runner(object):
 
         self.is_eligible_for_checkpoints = isinstance(agent, CheckpointAgent)
 
+        if agent.name() == "sarsa":
+            self.run_agent = self.run_sarsa
+        else:
+            self.run_agent = self.run
+    
+    def run_sarsa(self):
+        
+        training_context = ReplayBuffer(self.training_ctx_capacity,
+                                        is_continuous=self.agent.requires_continuous_action_space)
+        results = Results(agent_name=self.agent.name(), date_time=util.CURR_DATE_TIME)
+
+        state, info = self.env.reset()
+        action = self.agent.get_action(state)
+        next_state, reward, terminated, truncated, info = self.env.step(action)
+
+        curr_episode = 0
+        ep_timestep = 0
+        for t in range(self.max_timesteps):
+            if curr_episode > self.max_episodes:
+                break
+            
+            next_action = self.agent.get_action(next_state)
+            nn_state, reward_1, terminal_1, _, _ = self.env.step(next_action)
+
+            # render
+            if self.should_render:
+                self.env.render()
+
+            training_context.add_to_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
+
+            if t > self.start_training_timesteps:
+                self.agent.train(training_context)
+
+            timestep_result = Results.Timestep(state=state, action=action, reward=reward)
+            _summary = results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
+
+            if _summary is not None:
+                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {_summary} epsilon {self.agent.epsilon}")
+
+            # self.LOGGER.debug(timestep_result)
+            terminated = terminal_1
+
+            if ep_timestep >1000:
+                terminated = True
+
+            if terminated:
+                curr_episode += 1
+                next_action = self.agent.get_action(next_state)
+                training_context.add_to_sarsa((state, next_state, [action], [next_action], [reward],[terminated]))
+
+                state, info = self.env.reset()
+                action = self.agent.get_action(state)
+                next_state, reward, terminated, truncated, info = self.env.step(action)
+
+                # decays epsilon 
+                self.agent.decay_epsilon()
+                ep_timestep = 0
+            else:
+                state = next_state
+                next_state = nn_state
+                action = next_action
+                reward = reward_1
+                ep_timestep +=1
+
+            if truncated:
+                state, info = self.env.reset()
+
+            if self.is_eligible_for_checkpoints and self.should_save_checkpoints and \
+                    curr_episode % self.save_every == 0:
+                self.agent.save()
+
+        return results
+
+
     def run(self):
         state, info = self.env.reset()
         training_context = ReplayBuffer(self.training_ctx_capacity,

@@ -41,6 +41,7 @@ class Evaluator:
         return self.results
 
     def _eval_non_detailed(self):
+        
         cumulative_rewards = [x[0] for x in self.results.results]
         average_rewards = [x[1] for x in self.results.results]
         no_timesteps = [x[2] for x in self.results.results]

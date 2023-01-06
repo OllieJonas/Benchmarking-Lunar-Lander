@@ -1,22 +1,24 @@
-           # Creating an Agent
+# Creating an Agent
 
 ## How
-
 Creating an agent that's recognised by the program is very easy...
 
 1) Create a new .py file under the agents package. Call it whatever you like.
-2) Have it implement the AbstractAgent class in abstract_agent.
-3) Inherit the methods contained, and call the super constructor, passing action_space into your agent _(kinda messy, maybe should try to change that idk lmao)_
+2) Have it implement the AbstractAgent / CheckpointAgent class in abstract_agent.
+3) Inherit the methods contained, and call the super constructor, passing action_space into your agent.
 
-So far, it should look like this:
+So far, it should look like this (for AbstractAgent):
 
 ```python
 from rlcw.agents.abstract_agent import AbstractAgent
 
 class YourAgent(AbstractAgent):
 
-    def __init__(self, logger, action_space, cfg):
-        super.__init__(logger, action_space, cfg)
+    def __init__(self, logger, config):
+        super.__init__(logger, config)
+        
+    def assign_env_dependent_variables(self, action_space, state_space):
+        pass
         
     def name(self):
         return "YourAgent"
@@ -55,7 +57,7 @@ Here, you can implement those get_action and train methods, based on the informa
 
 ```python 
 elif name.lower() == "<your_agent>": 
-   return YourAgent(logger, action_space, cfg)
+   return YourAgent(logger, cfg)
 ```
 
 Bingo bango bongo we're done! 
@@ -70,10 +72,23 @@ recognise each new agent we create.
 
 ### Methods and Constructor Defined
 
-There's only **three** methods defined that will actually NEED to be implemented:
-1) `name()`
-2) `get_action(observation)`
-3) `train(training_context)`
+There's only **four** methods defined that will actually NEED to be implemented:
+1) `assign_env_dependent_variables(self, action_space, state_space)`
+2) `name()`
+3) `get_action(observation)`
+4) `train(training_context)`
+
+#### assign_env_dependent_variables(action_space, state_space)
+
+`assign_env_dependent_variables` is called **after** the initialisation of the environment. 
+
+To accommodate being able to swap between the discrete and continuous action spaces for Lunar Lander, we need to call the constructor for the agent **before** setting up the environment.
+
+Obviously, there are differences between the variables in the continuous and discrete action space, and therefore a second method to initialise those is called **after** setting up the environment (this one!)
+
+In other words, any variables needed for this agent that rely on the environment should be passed here.
+
+There is already a method `update_action_and_state_spaces` that is called before this one, so you don't need to assign those. Everything else, however, needs to be done.
 
 #### name()
 
@@ -103,7 +118,7 @@ training_context_item = {
    "next_state": next_state,
    "reward": reward,
    "action": action,
-    "terminated": terminated
+   "terminated": terminated
 }
 ```
 `training_context` is cyclic and bounded - i.e. once it reaches its max capacity (specificed under context_capacity in
@@ -112,5 +127,45 @@ the config.yml, it will start replacing old items with the newer ones.)
 For example: capacity = 5, training_context already contains [0, 1, 2, 3, 4]. Calling training_context.add(5) will 
 result in [1, 2, 3, 4, 5], appending 5 to the end and removing the oldest value (0).
 
+### CheckpointAgent
 
-_If we need anything else, we can add it later, tbh I'm not really sure what we need right now so I did safe bets?_
+CheckpointAgent is very similar to AbstractAgent, although it requires you to implement two additional methods:
+
+#### save()
+
+This is called whenever an episode ends that falls into the "every" category specified in the config.yml.
+
+There is a utility method specified in CheckpointAgent called `save_checkpoint(net, file_name)`, which is really all that should be called here.
+
+To better illustrate this, DQN's `save()` method is shown below (keep in mind that it uses two networks: a Value Network and a Target Value Network)
+
+```python
+    def save(self):
+        self.save_checkpoint(self._q, "ValueNetwork")
+        self.save_checkpoint(self._target_q, "TargetValueNetwork")
+```
+You don't need to specify a file extension - by default it uses a .pth extension. However, you can specify one if you wish by adding it to the end of the name.
+
+#### load(path)
+
+This is a very similar story to save, but for loading.
+
+There is also a utility method specified called `load_checkpoint(net, path, file_name)`, which does what it says on the tin.
+
+Again, better shown with an example:
+
+```python
+    def load(self, path):
+        self.load_checkpoint(self._q, path, "ValueNetwork")
+        self.load_checkpoint(self._target_q, path, "TargetValueNetwork")
+```
+Make sure that each network uses the same name - otherwise you'll run into problems later!
+
+### requires_continuous_action_space
+
+By default, each agent defaults to using a discrete action space. However, if you want to use a continuous one, all you need to do is add the following line to the constructor of your agent:
+
+```python
+    self.requires_continuous_action_space = True
+```
+
