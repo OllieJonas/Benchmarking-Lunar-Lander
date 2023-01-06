@@ -44,30 +44,31 @@ class Td3Agent(CheckpointAgent):
         self.min_action, self.max_action = None, None
 
     def assign_env_dependent_variables(self, action_space, state_space):
+        # self.min_action, self.max_action = action_space.low, action_space.high
         self.min_action, self.max_action = action_space.low, action_space.high
 
         self.actor_one, self.actor_one_optim = agent_utils.with_optim(
             ActorNetwork(self.input_dims, self.layer1_size,
                          self.layer2_size,
                          self.n_actions),
-            self.alpha)
+            self.alpha, device=self.device)
 
         self.actor_two, self.actor_two_optim = agent_utils.with_optim(
             ActorNetwork(self.input_dims, self.layer1_size,
                          self.layer2_size, self.n_actions),
-            self.alpha)
+            self.alpha, device=self.device)
 
         self.critic_one, self.critic_one_optim = agent_utils.with_optim(
             CriticNetwork(self.input_dims, self.layer1_size,
                           self.layer2_size,
                           no_actions=self.n_actions),
-            self.beta)
+            self.beta, device=self.device)
 
         self.critic_two, self.critic_two_optim = agent_utils.with_optim(
             CriticNetwork(self.input_dims, self.layer1_size,
                           self.layer2_size,
                           no_actions=self.n_actions),
-            self.beta)
+            self.beta, device=self.device)
 
         self.target_actor, self.target_actor_optim = agent_utils.with_optim(
             ActorNetwork(self.input_dims, self.layer1_size,
@@ -75,11 +76,11 @@ class Td3Agent(CheckpointAgent):
 
         self.target_critic_one, self.target_critic_one_optim = agent_utils.with_optim(
             CriticNetwork(self.input_dims, self.layer1_size,
-                          self.layer2_size, no_actions=self.n_actions), self.beta)
+                          self.layer2_size, no_actions=self.n_actions), self.beta, device=self.device)
 
         self.target_critic_two, self.target_critic_two_optim = agent_utils.with_optim(
             CriticNetwork(self.input_dims, self.layer1_size,
-                          self.layer2_size, no_actions=self.n_actions), self.beta)
+                          self.layer2_size, no_actions=self.n_actions), self.beta, device=self.device)
 
         agent_utils.hard_copy(self.critic_one, self.target_critic_one)
         agent_utils.hard_copy(self.critic_two, self.target_critic_two)
@@ -109,12 +110,13 @@ class Td3Agent(CheckpointAgent):
     def get_action(self, observation):
         if self.time_step < self.warmup:
             mu = T.tensor(np.random.normal(scale=self.noise,
-                                           size=(self.n_actions,))).to(self.actor_two.device)
+                                           size=(self.n_actions,))).to(self.device)
         else:
-            state = T.tensor(observation, dtype=T.float).to(self.actor_one.device)
-            mu = self.actor_one.forward(state).to(self.actor_one.device)
+            state = T.tensor(observation, dtype=T.float).to(
+                self.device)
+            mu = self.actor_one.forward(state).to(self.device)
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise),
-                                 dtype=T.float).to(self.actor_one.device)
+                                 dtype=T.float).to(self.device)
 
         mu_prime = T.clamp(mu_prime, self.min_action[0], self.max_action[0])
         self.time_step += 1
@@ -128,18 +130,19 @@ class Td3Agent(CheckpointAgent):
             self._do_train(training_context)
 
     def _do_train(self, training_context):
-        state, action, reward, new_state, done = \
-            training_context.random_sample_as_tensors(self.batch_size, self.device)
+        state, action, reward, state_, done = \
+            training_context.random_sample_as_tensors(
+                self.batch_size, self.device)
 
-        reward = T.tensor(reward, dtype=T.float).to(self.critic_one.device)
-        done = T.tensor(done).to(self.critic_one.device)
-        state_ = T.tensor(new_state, dtype=T.float).to(self.critic_one.device)
-        state = T.tensor(state, dtype=T.float).to(self.critic_one.device)
-        action = T.tensor(action, dtype=T.float).to(self.critic_one.device)
+        reward.clone().detach()
+        done = T.tensor(done).to(self.device)
+        state_.clone().detach()
+        state.clone().detach()
+        action.clone().detach()
 
         target_actions = self.target_actor.forward(state_)
         target_actions = target_actions + \
-                         T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
+            T.clamp(T.tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
         target_actions = T.clamp(target_actions, self.min_action[0],
                                  self.max_action[0])
 
@@ -184,6 +187,8 @@ class Td3Agent(CheckpointAgent):
 
         self.actor_one_optim.step()
 
-        agent_utils.soft_copy(self.critic_one, self.target_critic_one, self.tau)
-        agent_utils.soft_copy(self.critic_two, self.target_critic_two, self.tau)
+        agent_utils.soft_copy(
+            self.critic_one, self.target_critic_one, self.tau)
+        agent_utils.soft_copy(
+            self.critic_two, self.target_critic_two, self.tau)
         agent_utils.soft_copy(self.actor_one, self.target_actor, self.tau)

@@ -12,7 +12,8 @@ def _get_csv_file_path(name):
 
 
 def save_plot_as_image(name, title, data, x_label, y_label, fg_colour="red", bg_colour="grey", bg_opacity=0.35):
-    file_name = util.with_file_extension(f'{util.get_curr_session_output_path()}results/png/{name}', "png")
+    file_name = util.with_file_extension(
+        f'{util.get_curr_session_output_path()}results/png/{name}', "png")
     file_name = f'{util.get_curr_session_output_path()}results/png/{name}{"" if name.endswith(".png") else ".png"}'
     plt.plot(data)
 
@@ -61,7 +62,8 @@ class Evaluator:
             name = "results.csv"
 
             np.savetxt(_get_csv_file_path("results.csv"),
-                       [_ for _ in zip(cumulative_rewards, average_rewards, no_timesteps)],
+                       [_ for _ in zip(cumulative_rewards,
+                                       average_rewards, no_timesteps)],
                        delimiter=', ',
                        fmt="%s")
 
@@ -72,8 +74,7 @@ class Evaluator:
                                    f'Reward over Timesteps (Episode {str(k)})',
                                    [t.reward for t in v],
                                    "Timesteps",
-                                   "Reward",
-                )
+                                   "Reward")
 
             if self.should_save_csv:
                 name = f"results_ep_{str(k)}.csv"
@@ -84,6 +85,7 @@ class Evaluator:
                 rewards = ["Reward"] + [t.reward for t in v]
 
                 np.savetxt(_get_csv_file_path(name),
-                           [_ for _ in zip(timesteps, states, actions, rewards)],
+                           [_ for _ in zip(timesteps, states,
+                                           actions, rewards)],
                            delimiter=', ',
                            fmt="%s")
