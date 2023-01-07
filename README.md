@@ -5,7 +5,7 @@
 
 
 [gym-version]: https://img.shields.io/badge/gym-0.26.2-blue
-[python-version]: https://img.shields.io/badge/python-3.5, 3.6, 3.7, 3.8, 3.9-blue
+[python-version]: https://img.shields.io/badge/python-3.5|3.6|3.7|3.8|3.9-blue
 [license]: https://img.shields.io/badge/license-MIT-green
 
 [python-home]: https://python.org
