@@ -1,5 +1,5 @@
 # Benchmarking Different RL Methods on Lunar Lander
-![PythonVersion](python-version)
+[![PythonVersion][python-version]][python-home]
 [![GymVersion][gym-version]][gym-version]
 [![License][license]](LICENSE)
 
@@ -9,6 +9,7 @@
 [license]: https://img.shields.io/badge/license-MIT-green
 
 [python-home]: https://python.org
+[gym-website]: https://github.com/openai/gym
 
 <p align="center">
   <img src="https://imgur.com/ODEnfxR.gif" width="50%" />
