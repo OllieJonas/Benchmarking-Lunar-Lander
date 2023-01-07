@@ -1,4 +1,14 @@
 # Benchmarking Different RL Methods on Lunar Lander
+[!PythonVersion][python-version]][python-home]
+[!GymVersion][gym-version]][gym-version]
+[![License][license]](LICENSE)
+
+
+[gym-version]: https://img.shields.io/badge/gym-0.26.2-blue
+[python-version]: https://img.shields.io/badge/python-3.9-blue
+[license]: https://img.shields.io/badge/license-MIT-green
+
+[python-home]: https://python.org
 
 <p align="center">
   <img src="https://imgur.com/ODEnfxR.gif" width="50%" />
