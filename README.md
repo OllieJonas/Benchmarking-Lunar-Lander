@@ -1,6 +1,6 @@
 # Benchmarking Different RL Methods on Lunar Lander
-[!PythonVersion][python-version]][python-home]
-[!GymVersion][gym-version]][gym-version]
+![PythonVersion](python-version)
+[![GymVersion][gym-version]][gym-version]
 [![License][license]](LICENSE)
 
 
