@@ -3,39 +3,14 @@ author: Helen
 """
 
 import numpy as np
-import torch
-import torch.nn.functional as F
-from torch import nn
 
-import agents.common.utils as agent_utils
-from agents.common.policy import EpsilonGreedyPolicy
+
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
-
-
-class StateActionNetwork(nn.Module):
-    """
-     Neural Network to store state action values
-    """
-    def __init__(self, state_dim, action_dim):
-        super(StateActionNetwork, self).__init__()
-        self.num_hidden_units = 256
-
-        self.input_layer = nn.Linear(state_dim, self.num_hidden_units)
-        self.output_layer = nn.Linear(self.num_hidden_units, action_dim)
-
-    def forward(self, state):
-        q_vals = F.relu(self.input_layer(state))
-        q_vals = self.output_layer(q_vals)
-
-        return q_vals
-
 
 class SarsaAgent(CheckpointAgent):
     """
         Sarsa agent to solve Lunar lander
-
-        This was inspired by: https://github.com/JohDonald/Deep-Q-Learning-Deep-SARSA-LunarLander-v2
     """
 
     def name(self):
@@ -43,61 +18,34 @@ class SarsaAgent(CheckpointAgent):
 
     def __init__(self, logger, config):
         super().__init__(logger, config)
-
+        
         self.batch_size = config["batch_size"]
         self.epsilon = config["epsilon"]
         self.gamma = config["gamma"]
         self.learning_rate = config["learning_rate"]
 
-        self.criterion = nn.MSELoss()
-
-        self.network = None
-        self.optim = None
-        self.policy = None
-
     def assign_env_dependent_variables(self, action_space, state_space):
         state_space = state_space.shape[0]
-        action_space = action_space.n
+        self.action_space = action_space
 
-        self.network, self.optim = agent_utils.with_optim(StateActionNetwork(state_space, action_space),
-                                                          lr=self.learning_rate)
+        self.Q = self._make_q(np.zeros(8))
 
-        self.policy = EpsilonGreedyPolicy(self.epsilon, action_space, self.device)
+    def _make_q(self, observation):
 
-    def get_action(self, state):
-        state = torch.from_numpy(state).float()
-        network_output_to_numpy = self.network(state)
-        return self.policy.get_action(network_output_to_numpy)
+        n_states = (np.ones(8).shape) * np.array([5, 5, 2, 2, 2, 2, 0, 0])
+        n_states = np.round(n_states, 0).astype(int) + 1
 
-    def train(self, training_context: ReplayBuffer):
-        states, next_states, actions, next_actions, rewards, terminals = training_context.random_sample_sarsa(
-            self.batch_size)
-        states = torch.Tensor(states)
-        next_states = torch.Tensor(next_states)
-        actions = torch.Tensor(actions)
-        next_actions = torch.Tensor(next_actions)
-        rewards = torch.Tensor(rewards)
-        terminals = torch.Tensor(terminals)
+        n_actions = self.action_space.n 
+        
+        return np.zeros([n_states[0], n_states[1], n_states[2], n_states[3], n_states[4], n_states[5], n_states[6], n_states[7], n_actions])
 
-        self.update_network(states, next_states, actions, next_actions, rewards, terminals)
-
-    def update_network(self, state, next_state, action, next_action, reward, terminals):
-
-        q_action = torch.gather(self.network(state), dim=1, index=action.long())
-
-        q_next_action = torch.gather(self.network(next_state), dim=1, index=next_action.long())
-
-        qsa_next_target = reward + (self.gamma * q_next_action) * (1 - terminals)
-        q_network_loss = self.criterion(q_action, qsa_next_target.detach())
-        self.optim.zero_grad()
-        q_network_loss.backward()
-        self.optim.step()
-
-    def save(self):
-        self.save_checkpoint(self.network, "StateActionNetwork")
-
-    def load(self, path):
-        self.load_checkpoint(self.network, path, "StateActionNetwork")
+        
+    def _continuous_to_discrete(self, observation):
+        
+        min_obs = observation.min()
+        #import pdb; pdb.set_trace();
+        discrete = (observation - min_obs) * np.array([5, 5, 2, 2, 2, 2, 0, 0])
+        return np.round(discrete, 0).astype(int)
 
     def decay_epsilon(self):
         if self.epsilon > 0.1:
@@ -105,3 +53,38 @@ class SarsaAgent(CheckpointAgent):
 
         if self.epsilon <= 0.1:
             self.epsilon = 0.1
+
+    def get_action(self, observation):
+
+        if np.random.uniform(0, 1) < self.epsilon:
+            action = self.action_space.sample()
+        else:
+            state_discrete = self._continuous_to_discrete(observation)
+            action = np.argmax(self.Q[state_discrete[0], state_discrete[1], state_discrete[2], state_discrete[3], state_discrete[4], state_discrete[5], state_discrete[6], state_discrete[7]])
+        return action
+
+    def save(self):
+        '''
+            do nothing
+        '''
+    
+
+    def load(self, path):
+        '''
+            do nothing
+        '''
+
+    def train(self, training_context: ReplayBuffer):
+        states, actions, rewards, next_states, terminal = training_context.random_sample(self.batch_size)
+
+        s = self._continuous_to_discrete(states[0])
+        ns = self._continuous_to_discrete(next_states[0])
+        na = self.get_action(next_states[0])
+
+        delta = self.learning_rate * (
+                rewards[0]
+                + self.gamma * self.Q[ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], ns[6], ns[7], na]
+                - self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0])]
+        )
+
+        self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0])] += delta
