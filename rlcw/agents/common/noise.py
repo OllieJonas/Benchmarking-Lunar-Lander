@@ -3,7 +3,6 @@ import numpy as np
 
 
 class AbstractNoise(abc.ABC):
-
     def __init__(self):
         pass
 
@@ -40,5 +39,5 @@ class OUNoise(AbstractNoise):
             self.mu)
 
     def __repr__(self):
-        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(
+        return 'OUNoise(mu={}, sigma={})'.format(
             self.mu, self.sigma)
