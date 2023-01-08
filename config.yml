@@ -71,16 +71,6 @@ agents:
     epsilon_decay: 0.0005
     epsilon_min: 0.01
     gamma: 0.999
-  duelingdqn:
-    invert_done: false
-    learning_rate: 0.0003
-    batch_size: 64
-    hidden_layer_size: 512
-    update_count: 100
-    epsilon: 1.0
-    epsilon_decay: 0.00005
-    epsilon_min: 0.01
-    gamma: 0.99
   sarsa:
     gamma: 0.99
     learning_rate: 0.001
