@@ -17,27 +17,3 @@ class DeepQNetwork(nn.Module):
 
     def forward(self, state):
         return self.layers.forward(state)
-
-
-class DuelingDeepQNetwork(nn.Module):
-
-    # 512 = originally used in their paper
-    def __init__(self, input_size, no_actions, hidden_dims=512):
-        super(DuelingDeepQNetwork, self).__init__()
-        self.input_size = input_size
-        self.no_actions = no_actions
-
-        self.value_layers = nn.Sequential(
-            nn.Linear(input_size, hidden_dims),
-            nn.ReLU(),
-            nn.Linear(hidden_dims, 1)
-        )
-
-        self.advantage_layers = nn.Sequential(
-            nn.Linear(input_size, hidden_dims),
-            nn.ReLU(),
-            nn.Linear(hidden_dims, no_actions)
-        )
-
-    def forward(self, state):
-        return self.advantage_layers.forward(state), self.value_layers.forward(state)

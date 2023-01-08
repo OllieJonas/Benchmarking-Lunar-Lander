@@ -8,7 +8,7 @@ import torch.nn as nn
 import agents.common.utils as agent_utils
 from agents.dqn.networks import DeepQNetwork
 from agents.abstract_agent import CheckpointAgent
-from agents.dqn.policy import EpsilonGreedyPolicy
+from agents.common.policy import EpsilonGreedyPolicy
 from replay_buffer import ReplayBuffer
 
 

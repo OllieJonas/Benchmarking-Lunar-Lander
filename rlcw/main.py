@@ -11,7 +11,6 @@ import util
 
 from agents.ddpg.ddpg import DdpgAgent
 from agents.dqn.dqn import DQN
-from agents.dqn.dueling_dqn import DuelingDQN
 from agents.td3.td3 import Td3Agent
 from agents.random import RandomAgent
 from agents.sac import SoftActorCritic
@@ -82,8 +81,6 @@ def get_agent(name: str, agents_config):
         return SoftActorCritic(_logger, cfg)
     elif name == "dqn":
         return DQN(_logger, cfg)
-    elif name == "duelingdqn":
-        return DuelingDQN(_logger, cfg)
     else:
         raise NotImplementedError("An agent of this name doesn't exist! :(")
 

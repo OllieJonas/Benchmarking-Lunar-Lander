@@ -1,10 +1,10 @@
 overall:
-  agent_name: "td3"
+  agent_name: "sarsa"
   env_name: "LunarLander-v2"
   context_capacity: 1000000 # sarsa has context of 90351
   checkpoint:
     save:
-      enabled: true
+      enabled: false
       every: 20
     load:
       enabled: false
@@ -16,13 +16,13 @@ overall:
     verbose: false
     render: false
     save:
-      episodes: 20
+      episodes: 100
       csv: true
       charts: true
       raw: false
       recordings: true
   episodes:
-    max: 1000
+    max: 10
   timesteps:
     episode_timesteps: 500
     max: 1000000000000000
