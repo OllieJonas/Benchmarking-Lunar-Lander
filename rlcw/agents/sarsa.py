@@ -80,7 +80,7 @@ class SarsaAgent(CheckpointAgent):
                 network_output_to_numpy = self.network(state).data.numpy()
                 return np.argmax(network_output_to_numpy) 
 
-    def update_Sarsa_Network(self, state, next_state, action, next_action, reward, terminals):
+    def update_network(self, state, next_state, action, next_action, reward, terminals):
 
         q_action = torch.gather(self.network(state), dim=1, index=action.long())
 
@@ -107,4 +107,4 @@ class SarsaAgent(CheckpointAgent):
         next_actions = torch.Tensor(next_actions)
         rewards = torch.Tensor(rewards)
         terminals = torch.Tensor(terminals)
-        self.update_Sarsa_Network(states, next_states, actions, next_actions, rewards, terminals)
+        self.update_network(states, next_states, actions, next_actions, rewards, terminals)

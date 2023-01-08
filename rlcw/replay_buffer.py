@@ -19,28 +19,40 @@ class ReplayBuffer(object):
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 
         self.cnt = 0
-        self.sarsa_buffer = []
         
 
-    def add_to_sarsa(self, data):
-        self.sarsa_buffer.append(data)
+    def add_to_sarsa(self, state, next_state, action, next_action, reward, done, invert_done=True):
+        index = self.cnt % self.max_capacity
+        self.states[index] = state
+        self.next_states[index] = next_state
+        self.actions[index] = action
+        self.next_actions[index] = next_action
+        self.rewards[index] = reward
+
+        self.dones[index] = done
+        self.cnt += 1
 
 
     def random_sample_sarsa(self, sample_size):
         
+        size = min(self.cnt, self.max_capacity)
+        
+        batch = np.random.choice(size, sample_size)
         states, next_states, actions, next_actions, rewards, terminals = [], [], [], [], [], []
-        batch = np.random.choice(len(self.sarsa_buffer), sample_size)
-        for i in batch:     
-            entry = self.sarsa_buffer[i]
-            states.append(entry[0])
-            next_states.append(entry[1])
-            actions.append(entry[2])
-            next_actions.append(entry[3])
-            rewards.append(entry[4])
-            terminals.append(entry[5])
+
+        states = self.states[batch]
+        old_actions = self.actions[batch]
+        old_rewards = self.rewards[batch]
+        next_states = self.next_states[batch]
+        old_next_actions = self.next_actions[batch]
+        old_terminals = self.dones[batch]
 
         # this corrects the array randomly being considered an object
         for i in range(0, len(states)):
+            actions.append([old_actions[i]])
+            rewards.append([old_rewards[i]])
+            next_actions.append([old_next_actions[i]])
+            terminals.append([old_terminals[i]])
             if len(states[i]) == 2:
                 states[i] = states[i][0]
 
