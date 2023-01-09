@@ -4,7 +4,6 @@ author: Helen
 
 import numpy as np
 
-
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
 
@@ -43,7 +42,6 @@ class SarsaAgent(CheckpointAgent):
     def _continuous_to_discrete(self, observation):
         
         min_obs = observation.min()
-        #import pdb; pdb.set_trace();
         discrete = (observation - min_obs) * np.array([5, 5, 2, 2, 2, 2, 0, 0])
         return np.round(discrete, 0).astype(int)
 
@@ -75,16 +73,16 @@ class SarsaAgent(CheckpointAgent):
         '''
 
     def train(self, training_context: ReplayBuffer):
-        states, actions, rewards, next_states, terminal = training_context.random_sample(self.batch_size)
+        states, next_states, actions, next_actions, rewards, terminals = training_context.random_sample_sarsa(self.batch_size)
 
         s = self._continuous_to_discrete(states[0])
         ns = self._continuous_to_discrete(next_states[0])
-        na = self.get_action(next_states[0])
+        na = int(next_actions[0][0])
 
         delta = self.learning_rate * (
                 rewards[0]
                 + self.gamma * self.Q[ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], ns[6], ns[7], na]
-                - self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0])]
+                - self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0][0])]
         )
 
-        self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0])] += delta
+        self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0][0])] += delta

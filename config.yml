@@ -1,5 +1,5 @@
 overall:
-  agent_name: "sarsa"
+  agent_name: "deep_sarsa"
   env_name: "LunarLander-v2"
   context_capacity: 1000000
   checkpoint:
@@ -24,7 +24,7 @@ overall:
   episodes:
     max: 1000
   timesteps:
-    episode_timesteps: 500
+    episode_timesteps: 2000
     max: 1000000000000000
     start_training: 50
 agents:
@@ -73,11 +73,11 @@ agents:
     gamma: 0.999
   sarsa:
     gamma: 0.99
-    learning_rate: 0.001
+    learning_rate: 0.05
     epsilon: 1.0
     batch_size: 64
   deep_sarsa:
     gamma: 0.99
-    learning_rate: 0.01
+    learning_rate: 0.001
     epsilon: 1.0
     batch_size: 64
