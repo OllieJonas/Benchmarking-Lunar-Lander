@@ -35,6 +35,7 @@ def main():
     env, agent, config, episodes_to_save = setup()
 
     verbose = config["overall"]["output"]["verbose"]
+
     profiler = None
 
     if verbose:
@@ -109,10 +110,10 @@ def setup():
     LOGGER.setLevel(logger_level)
     logger.set_logger_level(logger_level)
 
-    # can't render in human mode and record at the same time
     should_record = config_output["save"]["recordings"]
     should_render = config_output["render"]
 
+    # can't render in human mode and record at the same time
     if should_render and should_record:
         LOGGER.warning(
             "Can't render and record at the same time! Disabling recording ...")
@@ -188,7 +189,7 @@ def _parse_episode_config_var(max_episodes, inp):
 
 def _split_into_partitions(_max, partitions):
     """
-    3 -> 0, 100, 199
+    3 -> [0, 100, 199]
     """
     if partitions <= 0:
         raise ValueError('partitions can\'t be less than 0')

@@ -19,7 +19,6 @@ class ReplayBuffer(object):
         self.dones = np.zeros(self.max_capacity, dtype=np.float32)
 
         self.cnt = 0
-        
 
     def add_to_sarsa(self, state, next_state, action, next_action, reward, done, invert_done=True):
         index = self.cnt % self.max_capacity
@@ -32,11 +31,10 @@ class ReplayBuffer(object):
         self.dones[index] = done
         self.cnt += 1
 
-
     def random_sample_sarsa(self, sample_size):
-        
+
         size = min(self.cnt, self.max_capacity)
-        
+
         batch = np.random.choice(size, sample_size)
         states, next_states, actions, next_actions, rewards, terminals = [], [], [], [], [], []
 
@@ -67,11 +65,10 @@ class ReplayBuffer(object):
 
         self.dones[index] = 1 - done if invert_done else done
         self.cnt += 1
-        
 
     def random_sample(self, sample_size):
         size = min(self.cnt, self.max_capacity)
-        
+
         batch = np.random.choice(size, sample_size)
 
         states = self.states[batch]

@@ -4,11 +4,6 @@ import util
 
 
 class Results:
-    """
-    idk how this is going to interact with pytorch cuda parallel stuff, so maybe we'll have to forget this? atm,
-    this is responsible for recording results.
-    """
-
     class Timestep:
         def __init__(self, state, action, reward):
             self.state = state

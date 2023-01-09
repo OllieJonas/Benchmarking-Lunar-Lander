@@ -1,10 +1,12 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class StateActionNetwork(nn.Module):
     """
      Neural Network to store state action values
     """
+
     def __init__(self, state_dim, action_dim):
         super(StateActionNetwork, self).__init__()
         self.num_hidden_units = 256

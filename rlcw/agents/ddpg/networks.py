@@ -25,7 +25,7 @@ class ActorNetwork(nn.Module):
         #     output_layer,
         #     nn.Tanh(),
         # )
-        #
+
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         fc1_range = 1. / np.sqrt(self.fc1.weight.data.size()[0])
         nn.init.uniform_(self.fc1.weight.data, -fc1_range, fc1_range)

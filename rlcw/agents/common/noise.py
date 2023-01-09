@@ -12,6 +12,12 @@ class AbstractNoise(abc.ABC):
 
 
 class OUNoise(AbstractNoise):
+    """
+    Ornstein-Uhlenbeck Noise
+    Wiki Article Here: https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process
+
+    taken from here: https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py
+    """
     def __init__(self, mu, sigma=0.15, theta=.2, dt=1e-2, x0=None):
         super().__init__()
 

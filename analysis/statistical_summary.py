@@ -1,15 +1,16 @@
-### Statistical Summary of Cumulative Rewards for Agents
+# Statistical Summary of Cumulative Rewards for Agents
 
 import numpy as np
 import statistics
 import csv
 
+
 # [Cumulative, Average, No Time-Steps]
 def read_file(filename, reward):
     data = []
     with open(filename) as csvfile:
-        reader = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC) # change contents to floats
-        for row in reader: # each row is a list
+        reader = csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC)  # change contents to floats
+        for row in reader:  # each row is a list
             data.append(row)
     for each in data:
         reward.append(each[0])
@@ -42,7 +43,7 @@ random = read_file("random.csv", random)
 sac = []
 sac = read_file("sac.csv", sac)
 
-data   = [sac, dqn, random, sarsa, human, td3, deep_sarsa, ddpg]
+data = [sac, dqn, random, sarsa, human, td3, deep_sarsa, ddpg]
 labels = ["SAC", "DQN", "Random", "SARSA", "Human", "TD3", "Deep SARSA", "DDPG"]
 
 print("{:16s} {:7} {:12} {:7} {:10}".format("Algorithm", "IQR", "Median", "Mean", "Std Dev"))
@@ -50,6 +51,6 @@ print("-----------------------------------------------------")
 for i in range(len(data)):
     q1, q2, q3 = np.percentile(data[i], [25, 50, 75])
     iqr = q3 - q1
-    mean = sum(data[i])/len(data[i])
+    mean = sum(data[i]) / len(data[i])
     std_dev = statistics.stdev(data[i])
     print("{:12s} {:7.2f} {:10.2f} {:10.2f} {:10.2f}".format(labels[i], iqr, q2, mean, std_dev))

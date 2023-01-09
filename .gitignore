@@ -4,7 +4,6 @@
 # Our stuff
 out
 config.yml
-/run.ahk
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

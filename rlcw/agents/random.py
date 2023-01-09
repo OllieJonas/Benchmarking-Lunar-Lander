@@ -15,6 +15,7 @@ class RandomAgent(AbstractAgent):
 
     def name(self):
         return "Random"
+
     def assign_env_dependent_variables(self, action_space, state_space):
         pass
 
