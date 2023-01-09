@@ -39,8 +39,11 @@ td3 = read_file("td3-1.csv", td3)
 random = []
 random = read_file("random.csv", random)
 
-data   = [dqn, random, sarsa, human, td3, deep_sarsa, ddpg]
-labels = ["DQN", "Random", "SARSA", "Human", "TD3", "Deep SARSA", "DDPG"]
+sac = []
+sac = read_file("sac.csv", sac)
+
+data   = [sac, dqn, random, sarsa, human, td3, deep_sarsa, ddpg]
+labels = ["SAC", "DQN", "Random", "SARSA", "Human", "TD3", "Deep SARSA", "DDPG"]
 
 print("{:16s} {:7} {:12} {:7} {:10}".format("Algorithm", "IQR", "Median", "Mean", "Std Dev"))
 print("-----------------------------------------------------")
@@ -50,12 +53,3 @@ for i in range(len(data)):
     mean = sum(data[i])/len(data[i])
     std_dev = statistics.stdev(data[i])
     print("{:12s} {:7.2f} {:10.2f} {:10.2f} {:10.2f}".format(labels[i], iqr, q2, mean, std_dev))
-
-
-
-
-
-
-
-
-
