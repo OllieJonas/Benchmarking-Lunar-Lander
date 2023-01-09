@@ -43,7 +43,8 @@ td3 = read_file("td3-1.csv", td3)
 random = []
 random = read_file("random.csv", random)
 
-
+sac = []
+sac = read_file("sac.csv", sac)
 
 def plot_boxes(data, labels, plot_title, filename):
     fig = plt.figure(figsize =(10, 7))
@@ -89,8 +90,8 @@ def plot_boxes(data, labels, plot_title, filename):
 
 
 ## Data needs to be in the same order as strings for y axis labels
-data        = [dqn, random, sarsa, human, td3, deep_sarsa, ddpg]
-labels      = ["DQN", "Random", "SARSA", "Human", "TD3", "Deep SARSA", "DDPG"]
+data        = [sac, dqn, random, human, sarsa, td3, deep_sarsa, ddpg]
+labels      = ["SAC","DQN", "Random", "Human", "SARSA", "TD3", "Deep SARSA", "DDPG"]
 plot_title  = "Box Plot: All Agents"
 filename    = "Box-Plots-All-Agents.png"
 
@@ -102,24 +103,3 @@ filename    = "Box-Plots-All-Agents.png"
 ### image_title - string fir title for the plot
 ### filename    - string ending with '.png' for the image to be saved as
 plot_boxes(data, labels, plot_title, filename)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
