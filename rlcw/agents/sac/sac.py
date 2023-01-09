@@ -7,124 +7,11 @@ import agents.common.utils as agent_utils
 from agents.abstract_agent import CheckpointAgent
 import torch
 import torch.nn as nn
+from agents.sac.networks import Actor
+from agents.sac.networks import Critic
+from agents.sac.networks import Value
 
 from replay_buffer import ReplayBuffer
-
-
-class Value(nn.Module):
-
-    def __init__(self, no_states, no_hidden_neurons, no_layers=1, initial_weight=3e-3):
-        super(Value, self).__init__()
-
-        if no_layers <= 0:
-            raise ValueError("can't be less than 0!")
-
-        self.no_states = no_states
-        self.no_hidden_neurons = no_hidden_neurons
-        self.no_layers = no_layers
-        self.initial_weight = initial_weight
-
-        self.input_layer = nn.Linear(no_states, no_hidden_neurons)
-        self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
-        self.output_layer = nn.Linear(no_hidden_neurons, 1)
-
-        self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
-        self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
-
-        self.float()
-
-    def forward(self, state):
-        inp = nn.functional.relu(self.input_layer(state))
-        hidden = nn.functional.relu(self.hidden_layer(inp))
-        out = self.output_layer(hidden)
-
-        return out
-
-
-class Critic(nn.Module):
-
-    def __init__(self, no_states, no_actions, no_hidden_neurons, no_layers=1, initial_weight=3e-3):
-        super(Critic, self).__init__()
-
-        self.no_states = no_states
-        self.no_actions = no_actions
-        self.no_hidden_neurons = no_hidden_neurons
-        self.no_layers = no_layers
-        self.initial_weight = initial_weight
-
-        self.input_layer = nn.Linear(no_states + no_actions, no_hidden_neurons)
-        self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
-        self.output_layer = nn.Linear(no_hidden_neurons, 1)
-
-        self.output_layer.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
-        self.output_layer.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
-
-        self.float()
-
-    def forward(self, state, action):
-        x = nn.functional.relu(self.input_layer(torch.cat([state, action], dim=1)))
-        x = nn.functional.relu(self.hidden_layer(x))
-        x = self.output_layer(x)
-        return x
-
-
-class Actor(nn.Module):
-    def __init__(self, device, max_action, state_shape, no_states, no_actions, no_hidden_neurons,
-                 no_layers=1,
-                 min_std_log=0,
-                 max_std_log=1,
-                 noise=1e-06,
-                 initial_weight=3e-3):
-        super(Actor, self).__init__()
-
-        self.device=device
-        self.max_action = max_action
-        self.state_shape = state_shape
-        self.no_states = no_states
-        self.no_actions = no_actions
-        self.hidden_p = no_hidden_neurons
-
-        self.no_layers = no_layers
-        self.min_std_log = min_std_log + noise
-        self.max_std_log = max_std_log
-        self.noise = noise
-
-        self.initial_weight = initial_weight
-
-        self.input_layer = nn.Linear(*state_shape, no_hidden_neurons)
-        self.hidden_layer = nn.Linear(no_hidden_neurons, no_hidden_neurons)
-
-        self.mean = nn.Linear(no_hidden_neurons, no_actions)
-        self.mean.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
-        self.mean.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
-
-        self.std = nn.Linear(no_hidden_neurons, no_actions)
-        self.std.weight.data.uniform_(-self.initial_weight, +self.initial_weight)
-        self.std.bias.data.uniform_(-self.initial_weight, +self.initial_weight)
-
-        self.float()
-
-    def forward(self, state):
-        x = nn.functional.relu(self.input_layer(state))
-        x = nn.functional.relu(self.hidden_layer(x))
-
-        mean = self.mean(x)
-        std_log = torch.clamp(self.std(x), min=self.min_std_log, max=self.max_std_log)
-
-        return mean, std_log
-
-    def sample_normal(self, state, reparameterise=True):
-    
-        
-
-        mean, std_log = self.forward(state)
-        probs = torch.distributions.Normal(mean, std_log)
-
-        normal_sample = probs.sample()
-        
-        action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(self.device)
-        log_probs = (probs.log_prob(normal_sample) - torch.log(1 - action.pow(2) + self.noise)).sum(1)
-        return action, log_probs
 
 
 class SoftActorCritic(CheckpointAgent):
@@ -135,7 +22,7 @@ class SoftActorCritic(CheckpointAgent):
         self._batch_cnt = 0
 
         self.requires_continuous_action_space = True
-                
+
         # hyperparams
         # batches
         self.sample_size = config["sample_size"]
@@ -225,30 +112,32 @@ class SoftActorCritic(CheckpointAgent):
 
     def get_action(self, state):
         state = torch.Tensor(state).unsqueeze(0).to(self.device)
-        actions, _ = self.actor.sample_normal(state, reparameterise=False)
+        actions, _ = self.actor.sample_normal(state)
 
         action = actions.cpu().detach().numpy()[0]
         return action
 
     def train(self, training_context: ReplayBuffer) -> NoReturn:
         if training_context.max_capacity < self.batch_size:  # sanity check
-            raise ValueError("max capacity of training_context is less than the batch size! :(")
+            raise ValueError(
+                "max capacity of training_context is less than the batch size! :(")
 
         if self._batch_cnt <= self.batch_size:
             self._batch_cnt += 1
             return
         else:
-            self._batch_cnt = 0
+            # self._batch_cnt = 0
             self._do_train(training_context)
 
     def _do_train(self, training_context: ReplayBuffer) -> NoReturn:
-        curr_states, next_states, rewards, actions, dones \
+        curr_states, new_actions, rewards, next_states, dones \
             = training_context.random_sample_as_tensors(self.sample_size, self.device)
 
         curr_value = self.value.forward(curr_states).view(-1)
         next_value = self.target_value.forward(next_states).view(-1)
 
-        new_actions, log_probs = self.actor.sample_normal(curr_states, reparameterise=False)
+        new_actions, log_probs = self.actor.sample_normal(
+            curr_states)
         log_probs = log_probs.view(-1)
         q1_new = self.critic_one.forward(curr_states, new_actions)
         q2_new = self.critic_two.forward(curr_states, new_actions)
@@ -260,7 +149,8 @@ class SoftActorCritic(CheckpointAgent):
         value_loss.backward(retain_graph=True)
         self.value_optim.step()
 
-        new_actions, log_probs = self.actor.sample_normal(curr_states, reparameterise=True)
+        new_actions, log_probs = self.actor.sample_normal(
+            curr_states)
         log_probs = log_probs.view(-1)
         q1_new = self.critic_one.forward(curr_states, new_actions)
         q2_new = self.critic_two.forward(curr_states, new_actions)
