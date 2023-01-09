@@ -37,7 +37,7 @@ class Runner(object):
 
         self.is_eligible_for_checkpoints = isinstance(agent, CheckpointAgent)
 
-        if agent.name() == "sarsa":
+        if agent.name() == "sarsa" or agent.name() == "deep_sarsa":
             self.run_agent = self.run_sarsa
         else:
             self.run_agent = self.run
@@ -85,7 +85,7 @@ class Runner(object):
             # self.LOGGER.debug(timestep_result)
             terminated = terminal_1
 
-            if ep_timestep >1000:
+            if ep_timestep > self.max_ep_timestep:
                 terminated = True
 
             if terminated:

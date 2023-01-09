@@ -56,7 +56,7 @@ class ReplayBuffer(object):
             if len(states[i]) == 2:
                 states[i] = states[i][0]
 
-        return torch.Tensor(states), torch.Tensor(next_states), torch.Tensor(actions), torch.Tensor(next_actions), torch.Tensor(rewards), torch.Tensor(terminals)
+        return states, next_states, actions, next_actions, rewards, terminals
 
     def add(self, state, next_state, action, reward, done, invert_done=True):
         index = self.cnt % self.max_capacity
