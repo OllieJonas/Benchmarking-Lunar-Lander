@@ -74,15 +74,15 @@ class SarsaAgent(CheckpointAgent):
 
     def train(self, training_context: ReplayBuffer):
         states, next_states, actions, next_actions, rewards, terminals = training_context.random_sample_sarsa(self.batch_size)
+        for i in range(0, self.batch_size):
+            s = self._continuous_to_discrete(states[i])
+            ns = self._continuous_to_discrete(next_states[i])
+            na = int(next_actions[i][0])
 
-        s = self._continuous_to_discrete(states[0])
-        ns = self._continuous_to_discrete(next_states[0])
-        na = int(next_actions[0][0])
+            delta = self.learning_rate * (
+                    rewards[i]
+                    + self.gamma * self.Q[ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], ns[6], ns[7], na]
+                    - self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[i][0])]
+            )
 
-        delta = self.learning_rate * (
-                rewards[0]
-                + self.gamma * self.Q[ns[0], ns[1], ns[2], ns[3], ns[4], ns[5], ns[6], ns[7], na]
-                - self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0][0])]
-        )
-
-        self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[0][0])] += delta
+            self.Q[s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], int(actions[i][0])] += delta
