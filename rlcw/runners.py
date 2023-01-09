@@ -41,9 +41,9 @@ class Runner(object):
             self.run_agent = self.run_sarsa
         else:
             self.run_agent = self.run
-    
+
     def run_sarsa(self):
-        
+
         training_context = ReplayBuffer(self.training_ctx_capacity,
                                         is_continuous=self.agent.requires_continuous_action_space)
         results = Results(agent_name=self.agent.name(), date_time=util.CURR_DATE_TIME)
@@ -57,7 +57,7 @@ class Runner(object):
         for t in range(self.max_timesteps):
             if curr_episode > self.max_episodes:
                 break
-            
+
             next_action = self.agent.get_action(next_state)
             nn_state, reward_1, terminal_1, _, _ = self.env.step(next_action)
 
@@ -80,12 +80,13 @@ class Runner(object):
             _summary = results.add(curr_episode, timestep_result, curr_episode in self.episodes_to_save)
 
             if _summary is not None:
-                self.LOGGER.info(f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {_summary} epsilon {self.agent.epsilon}")
+                self.LOGGER.info(
+                    f"Episode Summary for {curr_episode - 1} (Cumulative, Avg, No Timesteps): {_summary} epsilon {self.agent.epsilon}")
 
             # self.LOGGER.debug(timestep_result)
             terminated = terminal_1
 
-            if ep_timestep >1000:
+            if ep_timestep > 1000:
                 terminated = True
 
             if terminated:
@@ -111,7 +112,7 @@ class Runner(object):
                 next_state = nn_state
                 action = next_action
                 reward = reward_1
-                ep_timestep +=1
+                ep_timestep += 1
 
             if truncated:
                 state, info = self.env.reset()
@@ -121,7 +122,6 @@ class Runner(object):
                 self.agent.save()
 
         return results
-
 
     def run(self):
         state, info = self.env.reset()
@@ -169,7 +169,7 @@ class Runner(object):
 
             # self.LOGGER.debug(timestep_result)
 
-            if terminated or (ep_t > self.max_ep_timestep and self.max_ep_timestep != -1):
+            if terminated or (ep_t > self.max_ep_timestep != -1):
                 ep_t = 0
                 curr_episode += 1
                 state, info = self.env.reset()
