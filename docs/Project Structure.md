@@ -6,7 +6,7 @@ The Project Structure is as follows (with example output, "out" and everything u
 will be creating upon running the program):
 
     - root
-	- analysis
+        - analysis
         - docs
         - out
             - <agent-name> - <time of run>
