@@ -1,18 +1,11 @@
 """
 author: Helen
 """
-import random
-
 import numpy as np
-
-from typing import NoReturn, List
-
 import torch
 from torch import nn
-import torch.nn.functional as F
-from torch import optim
-from copy import deepcopy
-import util
+
+import agents.common.utils as agent_utils
 from agents.deep_sarsa.networks import StateActionNetwork
 from agents.abstract_agent import CheckpointAgent
 from replay_buffer import ReplayBuffer
@@ -34,15 +27,18 @@ class DeepSarsaAgent(CheckpointAgent):
         self.epsilon = config["epsilon"]
         self.gamma = config["gamma"]
         self.learning_rate = config["learning_rate"]
-        self.MSELoss_function = nn.MSELoss()
+        self.criterion = nn.MSELoss()
+
+        self.network = None
+        self.optim = None
 
 
     def assign_env_dependent_variables(self, action_space, state_space):
         state_space = state_space.shape[0]
         action_space = action_space.n
 
-        self.network = StateActionNetwork(state_space, action_space).to(self.device)
-        self.optimizer = optim.Adam(self.network.parameters(), lr=self.learning_rate)
+        self.network, self.optimizer = agent_utils.with_optim(StateActionNetwork(state_space, action_space),
+                                                          lr=self.learning_rate)
 
     def decay_epsilon(self):
         if self.epsilon > 0.1:
@@ -70,7 +66,7 @@ class DeepSarsaAgent(CheckpointAgent):
         q_next_action = torch.gather(self.network(next_state), dim=1, index=next_action.long())
 
         qsa_next_target = reward + (self.gamma * q_next_action) * (1 - terminals)
-        q_network_loss = self.MSELoss_function(q_action, qsa_next_target.detach())
+        q_network_loss = self.criterion(q_action, qsa_next_target.detach())
         self.optimizer.zero_grad()
         q_network_loss.backward()
         self.optimizer.step()
