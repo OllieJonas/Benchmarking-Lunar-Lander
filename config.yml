@@ -1,5 +1,5 @@
 overall:
-  agent_name: "deep_sarsa"
+  agent_name: "sac"
   env_name: "LunarLander-v2"
   context_capacity: 1000000
   checkpoint:

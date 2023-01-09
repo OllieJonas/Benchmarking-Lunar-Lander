@@ -69,7 +69,7 @@ class Critic(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, max_action, state_shape, no_states, no_actions, no_hidden_neurons,
+    def __init__(self, device, max_action, state_shape, no_states, no_actions, no_hidden_neurons,
                  no_layers=1,
                  min_std_log=0,
                  max_std_log=1,
@@ -77,6 +77,7 @@ class Actor(nn.Module):
                  initial_weight=3e-3):
         super(Actor, self).__init__()
 
+        self.device=device
         self.max_action = max_action
         self.state_shape = state_shape
         self.no_states = no_states
@@ -113,13 +114,15 @@ class Actor(nn.Module):
         return mean, std_log
 
     def sample_normal(self, state, reparameterise=True):
+    
+        
+
         mean, std_log = self.forward(state)
         probs = torch.distributions.Normal(mean, std_log)
 
         normal_sample = probs.sample()
-
+        
         action = torch.tanh(normal_sample) * torch.Tensor(self.max_action).to(self.device)
-
         log_probs = (probs.log_prob(normal_sample) - torch.log(1 - action.pow(2) + self.noise)).sum(1)
         return action, log_probs
 
@@ -131,6 +134,8 @@ class SoftActorCritic(CheckpointAgent):
         self.logger.info(f'SAC Config: {config}')
         self._batch_cnt = 0
 
+        self.requires_continuous_action_space = True
+                
         # hyperparams
         # batches
         self.sample_size = config["sample_size"]
@@ -192,7 +197,8 @@ class SoftActorCritic(CheckpointAgent):
                    ), self.learning_rate, device=self.device)
 
         self.actor, self.actor_optim = agent_utils.with_optim(
-            Actor(max_action=self.max_action,
+            Actor(device=self.device,
+                  max_action=self.max_action,
                   state_shape=state_space.shape,
                   no_states=self.state_size,
                   no_actions=self.action_size,
@@ -219,7 +225,7 @@ class SoftActorCritic(CheckpointAgent):
 
     def get_action(self, state):
         state = torch.Tensor(state).unsqueeze(0).to(self.device)
-        actions, _ = self.actor.sample_normal(state)
+        actions, _ = self.actor.sample_normal(state, reparameterise=False)
 
         action = actions.cpu().detach().numpy()[0]
         return action
