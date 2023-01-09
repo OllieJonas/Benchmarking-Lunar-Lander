@@ -14,7 +14,7 @@ from agents.dqn.dqn import DQN
 from agents.deep_sarsa.deep_sarsa import DeepSarsaAgent
 from agents.td3.td3 import Td3Agent
 from agents.random import RandomAgent
-from agents.sac import SoftActorCritic
+from agents.sac.sac import SoftActorCritic
 from agents.sarsa import SarsaAgent
 from orchestrator import Orchestrator
 
@@ -134,10 +134,13 @@ def setup():
 
     agent = get_agent(agent_name, config["agents"])
 
-    env = _make_env(env_name, should_record, agent.requires_continuous_action_space, save_partitions)
+    env = _make_env(env_name, should_record,
+                    agent.requires_continuous_action_space, save_partitions)
 
-    agent.update_action_and_state_spaces(env.action_space, env.observation_space)
-    agent.assign_env_dependent_variables(env.action_space, env.observation_space)
+    agent.update_action_and_state_spaces(
+        env.action_space, env.observation_space)
+    agent.assign_env_dependent_variables(
+        env.action_space, env.observation_space)
 
     return env, agent, config, save_partitions
 
