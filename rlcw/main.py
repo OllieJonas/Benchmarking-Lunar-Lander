@@ -11,6 +11,7 @@ import util
 
 from agents.ddpg.ddpg import DdpgAgent
 from agents.dqn.dqn import DQN
+from agents.deep_sarsa.deep_sarsa import DeepSarsaAgent
 from agents.td3.td3 import Td3Agent
 from agents.random import RandomAgent
 from agents.sac import SoftActorCritic
@@ -73,6 +74,8 @@ def get_agent(name: str, agents_config):
         return RandomAgent(_logger, cfg)
     elif name == "sarsa":
         return SarsaAgent(_logger, cfg)
+    elif name == "deep_sarsa":
+        return DeepSarsaAgent(_logger, cfg)
     elif name == "ddpg":
         return DdpgAgent(_logger, cfg)
     elif name == "td3":
